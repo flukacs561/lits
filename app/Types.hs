@@ -5,6 +5,7 @@ module Types where
 import Data.Aeson
 
 type Tag = String
+type Title = String
 
 data Author = Author
   { firstName :: Maybe String,
@@ -32,7 +33,7 @@ instance ToJSON Author where
 
 data Book = Book
   { fileName :: String,
-    title :: String,
+    title :: Title,
     author :: [Author],
     tags :: [Tag]
   }
@@ -55,7 +56,6 @@ instance ToJSON Book where
         "author" .= toJSON author,
         "tags" .= tags
       ]
-
 
 safeHead :: [a] -> Maybe a
 safeHead [] = Nothing

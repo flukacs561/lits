@@ -2,7 +2,9 @@ module DataBase where
 
 import Data.Aeson
 import qualified Data.ByteString.Lazy as B
+import Data.Char (isAlphaNum)
 import System.Directory
+import System.FilePath
 import Types
 
 dataBaseFileName :: FilePath
@@ -19,17 +21,52 @@ dataBaseFile = B.readFile dataBaseFileName
 validateDBFile :: IO (Maybe [Book])
 validateDBFile = do
   isDBFilePresent <- findLitsDBFile
-  if isDBFilePresent 
+  if isDBFilePresent
     then fmap decode dataBaseFile
     else pure Nothing
 
-printMetaData :: Book -> String
-printMetaData (Book _ title author _) = title ++ " - " ++ printAllAuthors author
+prepareNewEntry :: [String] -> IO Book
+prepareNewEntry [] = error "No file specified."
+prepareNewEntry [path] = do
+  putStrLn "This is database."
+  putStrLn "Title: "
+  title <- getLine
+  putStrLn "Author(s):"
+  author <- getAuthor
+  Book (takeFileName path) title author <$> getTags
+prepareNewEntry _ = error "Too many arguments."
 
-printAuthor :: Author -> String
-printAuthor (Author Nothing lastName) = lastName
-printAuthor (Author (Just firstName) lastName) = firstName ++ " " ++ lastName
+getAuthor :: IO [Author]
+getAuthor = run []
+  where
+    run authorList = do
+      newAuthor <- getOneAuthor
+      putStrLn "Are there any more authors? [y/N] "
+      moreAuthors <- getLine
+      if moreAuthors == "y" then run (newAuthor : authorList) else return $ newAuthor : authorList
 
-printAllAuthors :: [Author] -> String
-printAllAuthors [] = ""
-printAllAuthors (a:as) = printAuthor a ++ ", " ++ printAllAuthors as
+getOneAuthor :: IO Author
+getOneAuthor = do
+  putStrLn "First name: "
+  firstName <- getLine
+  putStrLn "Last Name: "
+  Author (if firstName == "" then Nothing else Just firstName) <$> getLine
+
+data TagValidationResult = Valid | Invalid | Empty
+
+validateTag :: Tag -> TagValidationResult
+validateTag "" = Empty
+validateTag tag = if all isAlphaNum tag then Valid else Invalid
+
+getTags :: IO [Tag]
+getTags = run []
+  where
+    run tagList = do
+      putStrLn "Next tag: "
+      newTag <- getLine
+      case validateTag newTag of
+        Valid -> run (newTag : tagList)
+        Invalid -> do
+          putStrLn "Invalid tag"
+          run tagList
+        Empty -> return tagList
