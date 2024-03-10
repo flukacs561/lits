@@ -27,5 +27,6 @@ executable lits
                     , aeson
                     , bytestring
                     , directory
+                    , filepath
     hs-source-dirs:   app
     default-language: Haskell2010
