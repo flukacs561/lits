@@ -7,6 +7,9 @@ import System.Directory
 import System.FilePath
 import Types
 
+dataBaseError :: a
+dataBaseError = error "An error occured when reading the database."
+
 dataBaseFileName :: FilePath
 dataBaseFileName = "test-data.json"
 
