@@ -57,10 +57,3 @@ instance ToJSON Book where
         "tags" .= thisTags
       ]
 
-safeHead :: [a] -> Maybe a
-safeHead [] = Nothing
-safeHead (x : _) = Just x
-
-safeTail :: [a] -> [a]
-safeTail [] = []
-safeTail l = tail l
