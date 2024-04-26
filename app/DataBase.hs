@@ -10,10 +10,13 @@ import Types
 dataBaseFileName :: FilePath
 dataBaseFileName = "test-data.json"
 
-findLitsDBFile :: IO Bool
-findLitsDBFile = do
+isFileInWorkingDirectory :: String -> IO Bool
+isFileInWorkingDirectory path = do
   files <- getDirectoryContents "."
-  pure $ dataBaseFileName `elem` files
+  pure $ path `elem` files
+
+findLitsDBFile :: IO Bool
+findLitsDBFile = isFileInWorkingDirectory dataBaseFileName
 
 dataBaseFile :: IO B.ByteString
 dataBaseFile = B.readFile dataBaseFileName
@@ -28,12 +31,15 @@ validateDBFile = do
 prepareNewEntry :: [String] -> IO Book
 prepareNewEntry [] = error "No file specified."
 prepareNewEntry [path] = do
-  putStrLn "This is database."
-  putStrLn "Title: "
-  title <- getLine
-  putStrLn "Author(s):"
-  author <- getAuthor
-  Book (takeFileName path) title author <$> getTags
+  isFilePresent <- isFileInWorkingDirectory path
+  if isFilePresent
+    then do
+      putStrLn "Title: "
+      thisTitle <- getLine
+      putStrLn "Author(s):"
+      thisAuthor <- getAuthor
+      Book (takeFileName path) thisTitle thisAuthor <$> getTags
+    else error "No such file in working directory."
 prepareNewEntry _ = error "Too many arguments."
 
 getAuthor :: IO [Author]
@@ -48,9 +54,9 @@ getAuthor = run []
 getOneAuthor :: IO Author
 getOneAuthor = do
   putStrLn "First name: "
-  firstName <- getLine
+  thisFirstName <- getLine
   putStrLn "Last Name: "
-  Author (if firstName == "" then Nothing else Just firstName) <$> getLine
+  Author (if thisFirstName == "" then Nothing else Just thisFirstName) <$> getLine
 
 data TagValidationResult = Valid | Invalid | Empty
 

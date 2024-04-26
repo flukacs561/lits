@@ -4,37 +4,22 @@ import Data.Aeson
 import qualified Data.ByteString.Lazy as B
 import DataBase
 import Filter
+import Formatting
 import System.Environment
 import Types
 
-throwError :: String -> String
-throwError cmd = "Invalid argument: \"" ++ cmd ++ "\" is not an actual command in LiTS."
+invalidCommandError :: String -> String
+invalidCommandError cmd = "Invalid argument: \"" ++ cmd ++ "\" is not an actual command in LiTS."
 
 dataBaseError :: a
 dataBaseError = error "An error occured when reading the database."
-
-printBooks :: Maybe [Book] -> IO ()
-printBooks Nothing = putStrLn ""
-printBooks (Just books) = putStrLn $ unlines $ fmap printMetaData books
-
-printMetaData :: Book -> String
-printMetaData (Book _ title author _) = title ++ " - " ++ printAllAuthors author
-
-printAuthor :: Author -> String
-printAuthor (Author Nothing lastName) = lastName
-printAuthor (Author (Just firstName) lastName) = firstName ++ " " ++ lastName
-
-printAllAuthors :: [Author] -> String
-printAllAuthors [] = ""
-printAllAuthors [a] = printAuthor a
-printAllAuthors (a : as) = printAuthor a ++ ", " ++ printAllAuthors as
 
 doList :: [String] -> Maybe [Book] -> IO ()
 doList [] = printBooks
 doList _ = error "Too many arguments."
 
 doFilter :: [String] -> Maybe [Book] -> IO ()
-doFilter args db = printBooks $ runFilterCmd args <$> db
+doFilter args db = printBooks (sortByAuthorLastname . runFilterCmd args <$> db)
 
 doAdd :: [String] -> Maybe [Book] -> IO ()
 doAdd args db = do
@@ -56,12 +41,14 @@ main = do
     Nothing -> putStrLn "No argument was provided."
     (Just "init") -> undefined
     (Just "list") -> doList (safeTail args) dataBase
-    (Just "check") -> undefined
-    (Just "filter") -> doFilter (safeTail args) dataBase
     (Just "add") -> doAdd (safeTail args) dataBase
-    (Just "add-tag") -> undefined
     (Just "delete") -> doDelete (safeTail args) dataBase
-    (Just cmd) -> putStrLn $ throwError cmd
+    (Just "check") -> undefined
+    (Just "clean-up") -> undefined
+    (Just "add-tag") -> undefined
+    (Just "remove-tag") -> undefined
+    (Just "filter") -> doFilter (safeTail args) dataBase
+    (Just cmd) -> putStrLn $ invalidCommandError cmd
 
 testFilter :: IO ()
 testFilter = do

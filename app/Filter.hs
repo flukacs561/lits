@@ -33,11 +33,11 @@ runFilterAuthor = filterField author authorMatcher
 authorMatcher :: String -> [Author] -> Bool
 authorMatcher match = any matchSingleAuthor
   where
-    matchSingleAuthor author = matchFirstName author || matchLastName author
-    matchFirstName author = case firstName author of
+    matchSingleAuthor thisAuthor = matchFirstName thisAuthor || matchLastName thisAuthor
+    matchFirstName thisAuthor = case firstName thisAuthor of
       Nothing -> False
       (Just name) -> textMatcher match name
-    matchLastName author = textMatcher match $ lastName author
+    matchLastName thisAuthor = textMatcher match $ lastName thisAuthor
 
 runFilterTitle :: Maybe String -> [Book] -> [Book]
 runFilterTitle = filterField title textMatcher

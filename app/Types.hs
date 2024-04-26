@@ -21,14 +21,14 @@ instance FromJSON Author where
   parseJSON _ = mempty
 
 instance ToJSON Author where
-  toJSON (Author Nothing lastName) =
+  toJSON (Author Nothing thisLastName) =
     object
-      [ "lastName" .= lastName
+      [ "lastName" .= thisLastName
       ]
-  toJSON (Author (Just firstName) lastName) =
+  toJSON (Author (Just thisFirstName) thisLastName) =
     object
-      [ "firstName" .= firstName,
-        "lastName" .= lastName
+      [ "firstName" .= thisFirstName,
+        "lastName" .= thisLastName
       ]
 
 data Book = Book
@@ -49,12 +49,12 @@ instance FromJSON Book where
   parseJSON _ = mempty
 
 instance ToJSON Book where
-  toJSON (Book fileName title author tags) =
+  toJSON (Book thisFileName thisTitle thisAuthor thisTags) =
     object
-      [ "fileName" .= fileName,
-        "title" .= title,
-        "author" .= toJSON author,
-        "tags" .= tags
+      [ "fileName" .= thisFileName,
+        "title" .= thisTitle,
+        "author" .= toJSON thisAuthor,
+        "tags" .= thisTags
       ]
 
 safeHead :: [a] -> Maybe a
