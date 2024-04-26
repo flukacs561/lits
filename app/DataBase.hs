@@ -70,3 +70,8 @@ getTags = run []
           putStrLn "Invalid tag"
           run tagList
         Empty -> return tagList
+
+removeEntry :: [String] -> Maybe [Book] -> Maybe [Book]
+removeEntry [] _ = error "No file specified."
+removeEntry [file] db = fmap (filter (\book -> fileName book == file)) db
+removeEntry _ _ = error "Too many arguments."
