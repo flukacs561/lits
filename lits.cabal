@@ -22,6 +22,7 @@ executable lits
     other-modules:    Types
                     , DataBase
                     , Filter
+                    , Formatting
     -- other-extensions:
     build-depends:    base ^>=4.17.2.1
                     , aeson
