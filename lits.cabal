@@ -8,7 +8,6 @@ license-file:       LICENSE
 author:             Ferenc Lukács
 maintainer:         flukacs@proton.me
 -- copyright:
-category:           Data
 build-type:         Simple
 extra-doc-files:    CHANGELOG.md
 -- extra-source-files:
@@ -16,18 +15,46 @@ extra-doc-files:    CHANGELOG.md
 common warnings
     ghc-options: -Wall
 
-executable lits
+library
     import:           warnings
-    main-is:          Main.hs
-    other-modules:    Types
+    exposed-modules:  Types
                     , DataBase
                     , Filter
                     , Formatting
+    -- other-modules:
     -- other-extensions:
     build-depends:    base ^>=4.17.2.1
                     , aeson
                     , bytestring
                     , directory
                     , filepath
+    hs-source-dirs:   lib
+    default-language: Haskell2010
+
+executable lits
+    import:           warnings
+    main-is:          Main.hs
+    -- other-modules:
+    -- other-extensions:
+    build-depends:    base ^>=4.17.2.1
+                    , aeson
+                    , bytestring
+                    , directory
+                    , filepath
+                    , lits
+
     hs-source-dirs:   app
     default-language: Haskell2010
+
+test-suite lits-test
+    import:           warnings
+    default-language: Haskell2010
+    -- other-modules:
+    -- other-extensions:
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Main.hs
+    build-depends:
+        base ^>=4.17.2.1,
+        lits
+
