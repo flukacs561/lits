@@ -1,8 +1,10 @@
 module Main where
 
 import Commands
-import System.Environment
-import DataBase ( validateDBFile )
+    ( doAdd, doDelete, doFilter, doList, invalidCommandError )
+import DataBase (validateDBFile)
+import System.Environment (getArgs)
+import Utilities (safeHead, safeTail)
 
 main :: IO ()
 main = do

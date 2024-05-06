@@ -1,35 +1,42 @@
 module Filter where
 
-import Types
+import DataBase
+import Utilities
+import Data.Char (toLower)
 
 data FilterO = FilterO
   { titleF :: Maybe String,
     authorF :: Maybe String,
     tagsF :: [Tag]
   }
-  deriving (Show)
+  deriving (Show, Eq)
 
 runFilterCmd :: [String] -> [Book] -> [Book]
 runFilterCmd = runFilter . parseFilterInput
 
+-- Applies filters to every field of a Book structure.
 runFilter :: Maybe FilterO -> [Book] -> [Book]
 runFilter Nothing = id
 runFilter (Just (FilterO titleM authorM tagsM)) = runFilterTags tagsM . runFilterAuthor authorM . runFilterTitle titleM
 
+-- Generic function that applies filter to a specific field of a Book structure.
 filterField :: (Book -> a) -> (String -> a -> Bool) -> Maybe String -> [Book] -> [Book]
 filterField _ _ Nothing = id
 filterField fieldSelector matcherFunction (Just match) = filter (\book -> match `matcherFunction` fieldSelector book)
 
+-- Filters out the books that are tagged with each of the tags provided.
 runFilterTags :: [Tag] -> [Book] -> [Book]
 runFilterTags [] books = books
 runFilterTags (t : ts) books = runFilterTags ts $ filterTag (Just t) books
   where
+    -- Filters out the books that are tagged with a specific tag.
     filterTag :: Maybe Tag -> [Book] -> [Book]
     filterTag = filterField tags elem
 
 runFilterAuthor :: Maybe String -> [Book] -> [Book]
 runFilterAuthor = filterField author authorMatcher
 
+-- Filters out those books where the provided string matches either the first or last name of any of the authors.
 authorMatcher :: String -> [Author] -> Bool
 authorMatcher match = any matchSingleAuthor
   where
@@ -42,15 +49,23 @@ authorMatcher match = any matchSingleAuthor
 runFilterTitle :: Maybe String -> [Book] -> [Book]
 runFilterTitle = filterField title textMatcher
 
+-- This function specifies the algorithm that decides whether a piece of string matches any of the fields.
 textMatcher :: String -> String -> Bool
 textMatcher = isPrefixOf
 
 isPrefixOf :: String -> String -> Bool
 isPrefixOf [] _ = True
 isPrefixOf (_ : _) [] = False
-isPrefixOf (m : ms) (s : ss) = (m == s) && isPrefixOf ms ss
+isPrefixOf (m : ms) (s : ss) = (toLower m == toLower s) && isPrefixOf ms ss
 
--- lits filter -a hartsho -T alg -t maths ag
+{- Parses a list of strings into a FilterO structure, which is then used to perform the actual filtering.
+The expected structure of the input is bash-like with the following flags:
+ * "-T": title
+ * "-a": author
+ * "-t": tags
+Zero or more of these flags may be provided. Each of them may be followed by one or more alphanumeric strings.
+Example:
+lits filter -a hartsho -T alg -t maths ag -}
 parseFilterInput :: [String] -> Maybe FilterO
 parseFilterInput input = run input $ Just (FilterO Nothing Nothing [])
   where
@@ -66,3 +81,4 @@ parseFilterInput input = run input $ Just (FilterO Nothing Nothing [])
       [] -> Nothing
       tagsM' -> run (dropWhile (\str -> head str /= '-') strs) $ Just (FilterO titleM authorM tagsM')
     run _ _ = Nothing
+  

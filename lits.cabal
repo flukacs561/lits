@@ -17,11 +17,13 @@ common warnings
 
 library
     import:           warnings
-    exposed-modules:  Types
+    exposed-modules:  Commands
                     , DataBase
-                    , Filter
+                    , EntryManager
+                    , FileManager
+                    , Utilities
                     , Formatting
-                    , Commands
+                    , Filter
     -- other-modules:
     -- other-extensions:
     build-depends:    base ^>=4.17.2.1
