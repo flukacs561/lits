@@ -4,6 +4,7 @@ import DataBase
 import Data.Char (isAlphaNum)
 import FileManager
 import System.FilePath
+import Utilities ((|||))
 
 -- The argument should contain exactly one string: the name of the file for which the entry is to be generated.
 prepareNewEntry :: String -> IO Book
@@ -40,7 +41,7 @@ data TagValidationResult = Valid | Invalid | Empty
 -- Tags should be nonempty and contain only alphanumeric characters.
 validateTag :: Tag -> TagValidationResult
 validateTag "" = Empty
-validateTag tag = if all isAlphaNum tag then Valid else Invalid
+validateTag tag = if all (isAlphaNum ||| (== '-')) tag then Valid else Invalid
 
 -- Tags can be inputed until an empty string is submitted.
 getTags :: IO [Tag]
