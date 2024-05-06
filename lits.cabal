@@ -9,7 +9,7 @@ author:             Ferenc Lukács
 maintainer:         flukacs@proton.me
 -- copyright:
 build-type:         Simple
-extra-doc-files:    CHANGELOG.md
+extra-doc-files:    README.md
 -- extra-source-files:
 
 common warnings
@@ -52,12 +52,14 @@ executable lits
 test-suite lits-test
     import:           warnings
     default-language: Haskell2010
-    -- other-modules:
+    other-modules:    TestUtils
     -- other-extensions:
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
     main-is:          Main.hs
     build-depends:
         base ^>=4.17.2.1,
-        lits
+        lits,
+        tasty,
+        tasty-hunit,
 
