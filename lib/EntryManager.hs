@@ -6,9 +6,8 @@ import FileManager
 import System.FilePath
 
 -- The argument should contain exactly one string: the name of the file for which the entry is to be generated.
-prepareNewEntry :: [String] -> IO Book
-prepareNewEntry [] = error "No file specified."
-prepareNewEntry [path] = do
+prepareNewEntry :: String -> IO Book
+prepareNewEntry path = do
   isFilePresent <- isFileInWorkingDirectory path
   if isFilePresent
     then do
@@ -18,7 +17,6 @@ prepareNewEntry [path] = do
       thisAuthor <- getAuthor
       Book (takeFileName path) thisTitle thisAuthor <$> getTags
     else error "No such file in working directory."
-prepareNewEntry _ = error "Too many arguments."
 
 -- There might be more than one author for a single book, and we want to note all of them.
 getAuthor :: IO [Author]
@@ -58,7 +56,5 @@ getTags = run []
           run tagList
         Empty -> return tagList
 
-removeEntry :: [String] -> Maybe [Book] -> Maybe [Book]
-removeEntry [] _ = error "No file specified."
-removeEntry [file] db = fmap (filter (\book -> fileName book /= file)) db
-removeEntry _ _ = error "Too many arguments."
+removeEntry :: String -> Maybe [Book] -> Maybe [Book]
+removeEntry file = fmap (filter (\book -> fileName book /= file))

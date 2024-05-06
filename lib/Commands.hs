@@ -25,15 +25,24 @@ doList :: [String] -> Maybe [Book] -> IO ()
 doList [] = printBooks
 doList _ = error "Too many arguments."
 
+-- Input validation happend in `parseFilterInput`.
 doFilter :: [String] -> Maybe [Book] -> IO ()
 doFilter args db = printBooks $ runFilterCmd args <$> db
 
 doAdd :: [String] -> Maybe [Book] -> IO ()
 doAdd args db = do
-  newBook <- prepareNewEntry args
+  newBook <- prepareNewEntry' args
   writeToDataBase $ fmap (newBook :) db
+  where
+    prepareNewEntry' [] = error "No file specified"
+    prepareNewEntry' [path] = prepareNewEntry path
+    prepareNewEntry' _ = error "Too many arguments"
 
 doDelete :: [String] -> Maybe [Book] -> IO ()
 doDelete args db = do
-  writeToDataBase $ removeEntry args db
+  writeToDataBase $ removeEntry' args db
   deleteFile args
+  where
+    removeEntry' [] = error "No file specified."
+    removeEntry' [file] = removeEntry file
+    removeEntry' _ = error "Too many arguments."
