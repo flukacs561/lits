@@ -1,15 +1,15 @@
 module Formatting
   ( printBooks,
+    printMetaData,
   )
 where
 
-import Data.List (sortBy, sort)
+import Data.List (sort, sortBy)
 import DataBase
 import Utilities
 
-printBooks :: Maybe [Book] -> IO ()
-printBooks Nothing = putStrLn ""
-printBooks (Just books) = putStrLn $ unlines (printMetaData <$> sortByAuthorLastname books)
+printBooks :: [Book] -> IO ()
+printBooks books = putStrLn $ unlines (printMetaData <$> sortByAuthorLastname books)
 
 sortByAuthorLastname :: [Book] -> [Book]
 sortByAuthorLastname = sortBy compareAuthorLastName
@@ -35,4 +35,4 @@ printAllAuthors (a : as) = printAuthor a ++ ", " ++ printAllAuthors as
 printTags :: [Tag] -> String
 printTags [] = ""
 printTags [tag] = tag
-printTags (t:ts) = t ++ ", " ++ printTags ts
+printTags (t : ts) = t ++ ", " ++ printTags ts
