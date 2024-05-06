@@ -62,19 +62,17 @@ instance ToJSON Book where
 dataBaseError :: a
 dataBaseError = error "An error occured when reading the database."
 
-dataBaseFileName :: FilePath
-dataBaseFileName = "test-data.json"
-
-dataBaseFile :: IO B.ByteString
-dataBaseFile = B.readFile dataBaseFileName
-
 -- Check whether the database file is present in the current directory and is valid JSON.
 validateDBFile :: IO (Maybe [Book])
 validateDBFile = do
   isDBFilePresent <- isFileInWorkingDirectory dataBaseFileName
   if isDBFilePresent
-    then fmap decode dataBaseFile
+    then fmap decodeDBFile dataBaseFile
     else pure Nothing
+  where
+    decodeDBFile :: B.ByteString -> Maybe [Book]
+    decodeDBFile "" = Just []
+    decodeDBFile dbContent = decode dbContent
 
 writeToDataBase :: Maybe [Book] -> IO ()
 writeToDataBase newDB = case fmap encode newDB of

@@ -4,17 +4,22 @@ module Commands
     doFilter,
     doAdd,
     doDelete,
+    doInit,
   )
 where
 
 import DataBase (Book, writeToDataBase)
 import EntryManager (prepareNewEntry, removeEntry)
-import FileManager (deleteFile)
+import FileManager (createDBFile, deleteFile)
 import Filter (runFilterCmd)
 import Formatting (printBooks)
 
 invalidCommandError :: String -> String
 invalidCommandError cmd = "Invalid argument: \"" ++ cmd ++ "\" is not an actual command in LiTS."
+
+doInit :: [String] -> IO ()
+doInit [] = createDBFile
+doInit _ = error "Too many arguments."
 
 doList :: [String] -> Maybe [Book] -> IO ()
 doList [] = printBooks

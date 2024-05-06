@@ -1,7 +1,7 @@
 module Main where
 
 import Commands
-    ( doAdd, doDelete, doFilter, doList, invalidCommandError )
+    ( doInit, doAdd, doDelete, doFilter, doList, invalidCommandError )
 import DataBase (validateDBFile)
 import System.Environment (getArgs)
 import Utilities (safeHead, safeTail)
@@ -12,7 +12,7 @@ main = do
   dataBase <- validateDBFile
   case safeHead args of
     Nothing -> putStrLn "No argument was provided."
-    (Just "init") -> undefined
+    (Just "init") -> doInit (safeTail args)
     (Just "list") -> doList (safeTail args) dataBase
     (Just "add") -> doAdd (safeTail args) dataBase
     (Just "delete") -> doDelete (safeTail args) dataBase
