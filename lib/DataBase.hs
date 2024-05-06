@@ -3,7 +3,8 @@
 module DataBase where
 
 import Data.Aeson
-import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString as BS
 import FileManager
 
 type Tag = String
@@ -59,22 +60,31 @@ instance ToJSON Book where
         "tags" .= thisTags
       ]
 
-dataBaseError :: a
-dataBaseError = error "An error occured when reading the database."
+dataBaseReadError :: a
+dataBaseReadError = error "An error occured when reading the database. Its JSON structure might be compromised."
+
+dataBaseWriteError :: String -> a 
+dataBaseWriteError newDB = error $ "An error occured when writing the database." ++ show newDB
+
+dataBaseNotFoundError :: a 
+dataBaseNotFoundError = error $ "No database file found: " ++ dataBaseFileName
 
 -- Check whether the database file is present in the current directory and is valid JSON.
-validateDBFile :: IO (Maybe [Book])
+validateDBFile :: IO [Book]
 validateDBFile = do
   isDBFilePresent <- isFileInWorkingDirectory dataBaseFileName
   if isDBFilePresent
     then fmap decodeDBFile dataBaseFile
-    else pure Nothing
+    else dataBaseNotFoundError
   where
-    decodeDBFile :: B.ByteString -> Maybe [Book]
-    decodeDBFile "" = Just []
-    decodeDBFile dbContent = decode dbContent
+    decodeDBFile :: BS.ByteString -> [Book]
+    decodeDBFile "" = []
+    decodeDBFile dbContentString = case decodeStrict dbContentString of
+      Nothing -> dataBaseReadError
+      (Just dbContent) -> dbContent
 
-writeToDataBase :: Maybe [Book] -> IO ()
-writeToDataBase newDB = case fmap encode newDB of
-  Nothing -> dataBaseError
-  (Just newJSON) -> B.writeFile dataBaseFileName newJSON
+writeToDataBase :: [Book] -> IO ()
+writeToDataBase newDB = BL.writeFile dataBaseFileName $ encode newDB
+-- writeToDataBase newDB = case fmap encode newDB of
+--   Nothing -> error "An error occured when writing "
+--   (Just newJSON) -> B.writeFile dataBaseFileName newJSON

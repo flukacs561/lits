@@ -1,23 +1,32 @@
-module EntryManager (prepareNewEntry, removeEntry) where
+module EntryManager
+  ( prepareNewEntry,
+    removeEntry,
+    addUnsavedBookDialog,
+    runImportCommand,
+    runCleanCommand,
+  )
+where
 
-import DataBase
 import Data.Char (isAlphaNum)
+import Data.List ((\\))
+import DataBase
 import FileManager
 import System.FilePath
 import Utilities ((|||))
+import Formatting
 
 -- The argument should contain exactly one string: the name of the file for which the entry is to be generated.
 prepareNewEntry :: String -> IO Book
-prepareNewEntry path = do
-  isFilePresent <- isFileInWorkingDirectory path
+prepareNewEntry file = do
+  isFilePresent <- isFileInWorkingDirectory file
   if isFilePresent
     then do
       putStrLn "Title: "
       thisTitle <- getLine
       putStrLn "Author(s):"
       thisAuthor <- getAuthor
-      Book (takeFileName path) thisTitle thisAuthor <$> getTags
-    else error "No such file in working directory."
+      Book (takeFileName file) thisTitle thisAuthor <$> getTags
+    else error "No such file in current directory."
 
 -- There might be more than one author for a single book, and we want to note all of them.
 getAuthor :: IO [Author]
@@ -57,5 +66,86 @@ getTags = run []
           run tagList
         Empty -> return tagList
 
-removeEntry :: String -> Maybe [Book] -> Maybe [Book]
-removeEntry file = fmap (filter (\book -> fileName book /= file))
+removeEntry :: FilePath -> [Book] -> [Book]
+removeEntry file = filter (\book -> fileName book /= file)
+
+runImportCommand :: [Book] -> IO [Book]
+runImportCommand db = do
+  booksInDirectory <- getBookFilesFromDirectory
+  booksToAdd <- addUnsavedBookDialog $ getUnsavedBooks booksInDirectory db
+  return $ booksToAdd ++ db
+
+addUnsavedBookDialog :: [FilePath] -> IO [Book]
+addUnsavedBookDialog [] = do
+  putStrLn "No more unsaved files."
+  return []
+addUnsavedBookDialog (file : rest) = do
+  putStrLn $ "Do you want to create a database entry for " ++ file ++ "? [y/N/s/d/?]"
+  wantToSave <- getLine
+  case wantToSave of
+    "y" -> myCombine (prepareNewEntry file) $ addUnsavedBookDialog rest
+    "n" -> addUnsavedBookDialog rest
+    "s" -> return []
+    "d" -> do
+      removeFile file
+      addUnsavedBookDialog rest
+    "?" -> do
+      putStrLn $
+        unlines
+          [ "y - yes",
+            "n - no",
+            "s - stop (say no to all consequent)",
+            "d - delete file",
+            "? - print this help"
+          ]
+      addUnsavedBookDialog rest
+    _ -> addUnsavedBookDialog rest
+
+myCombine :: IO a -> IO [a] -> IO [a]
+myCombine ioElement ioList = do
+  element <- ioElement
+  list <- ioList
+  return $ element : list
+
+getUnsavedBooks :: [FilePath] -> [Book] -> [FilePath]
+getUnsavedBooks files books = filter (not . hasEntry books) files
+
+hasEntry :: [Book] -> FilePath -> Bool
+hasEntry books file = any (\book -> file == fileName book) books
+
+runCleanCommand :: [Book] -> IO [Book]
+runCleanCommand db = do
+  booksInDirectory <- getBookFilesFromDirectory
+  entriesToRemove <- removeOrphanEntryDialog (getOrphanEntries booksInDirectory db) db
+  return $ db \\ entriesToRemove
+
+removeOrphanEntryDialog :: [Book] -> [Book] -> IO [Book]
+removeOrphanEntryDialog [] _ = do
+  putStrLn "No orphan database entries."
+  return []
+removeOrphanEntryDialog (book : rest) db = do
+  putStrLn "The following entry doesn't have an actual file associated to it in the current directory . Do you want to remove it? [y/N/s/a/?]"
+  putStrLn $ printMetaData book
+  wantToRemove <- getLine
+  case wantToRemove of
+    "y" -> myCombine (pure book) $ removeOrphanEntryDialog rest db
+    "n" -> removeOrphanEntryDialog rest db
+    "s" -> return []
+    "a" -> return (book : rest)
+    "?" -> do
+      putStrLn $
+        unlines
+          [ "y - yes",
+            "n - no",
+            "s - stop (say no to all consequent)",
+            "a - auto (say yes to all consequent)",
+            "? - print this help"
+          ]
+      removeOrphanEntryDialog rest db
+    _ -> removeOrphanEntryDialog rest db
+
+getOrphanEntries :: [FilePath] -> [Book] -> [Book]
+getOrphanEntries files = filter (not . hasFile files)
+
+hasFile :: [FilePath] -> Book -> Bool
+hasFile files book = any (\file -> fileName book == file) files

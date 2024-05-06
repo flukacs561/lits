@@ -1,31 +1,34 @@
 module FileManager
   ( isFileInWorkingDirectory,
-    deleteFile,
     createDBFile,
     dataBaseFileName,
     dataBaseFile,
+    getBookFilesFromDirectory,
+    removeFile
   )
 where
 
-import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString as BS
 import System.Directory
 import System.FilePath
 
 dataBaseFileName :: FilePath
 dataBaseFileName = "test-data.json"
 
-dataBaseFile :: IO B.ByteString
-dataBaseFile = B.readFile dataBaseFileName
+dataBaseFile :: IO BS.ByteString
+dataBaseFile = BS.readFile dataBaseFileName
 
 isFileInWorkingDirectory :: String -> IO Bool
 isFileInWorkingDirectory path = do
   files <- getDirectoryContents "."
   pure $ path `elem` files
 
-deleteFile :: [String] -> IO ()
-deleteFile [] = error "No file specified for deletion"
-deleteFile [path] = removeFile path
-deleteFile _ = error "Too many arguments provided"
+getBookFilesFromDirectory :: IO [String]
+getBookFilesFromDirectory = do
+  files <- getDirectoryContents "."
+  pure $ filter (\file -> takeExtension file `elem` bookExtensions) files
+  where
+    bookExtensions = [".pdf", ".epub", ".mobi", ".djvi", ".dvi", ".ps"]
 
 createDBFile :: IO ()
 createDBFile = writeFile dataBaseFileName ""
