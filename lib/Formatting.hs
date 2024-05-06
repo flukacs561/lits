@@ -1,7 +1,11 @@
-module Formatting where
+module Formatting
+  ( printBooks,
+  )
+where
 
-import Data.List (sortBy)
-import Types
+import Data.List (sortBy, sort)
+import DataBase
+import Utilities
 
 printBooks :: Maybe [Book] -> IO ()
 printBooks Nothing = putStrLn ""
@@ -17,7 +21,7 @@ compareAuthorLastName book1 book2 = compare author1 author2
     author2 = maybe "" lastName $ safeHead $ author book2
 
 printMetaData :: Book -> String
-printMetaData (Book _ thisTitle thisAuthor _) = thisTitle ++ " - " ++ printAllAuthors thisAuthor
+printMetaData (Book _ thisTitle thisAuthor theseTags) = thisTitle ++ " - " ++ printAllAuthors thisAuthor ++ " (" ++ printTags (sort theseTags) ++ ")"
 
 printAuthor :: Author -> String
 printAuthor (Author Nothing thisLastName) = thisLastName
@@ -27,3 +31,8 @@ printAllAuthors :: [Author] -> String
 printAllAuthors [] = ""
 printAllAuthors [a] = printAuthor a
 printAllAuthors (a : as) = printAuthor a ++ ", " ++ printAllAuthors as
+
+printTags :: [Tag] -> String
+printTags [] = ""
+printTags [tag] = tag
+printTags (t:ts) = t ++ ", " ++ printTags ts
