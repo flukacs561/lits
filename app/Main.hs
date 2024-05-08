@@ -1,7 +1,7 @@
 module Main where
 
 import Commands
-    ( doInit, doAdd, doDelete, doFilter, doList, invalidCommandError, doImport, doRemoveDups, doClean)
+    ( doInit, doAdd, doDelete, doFilter, doList, invalidCommandError, doImport, doRemoveDups, doClean, doAddTags, doRemoveTags)
 import DataBase (validateDBFile)
 import System.Environment (getArgs)
 import Utilities (safeHead, safeTail)
@@ -18,8 +18,10 @@ main = do
     (Just "delete") -> doDelete (safeTail args) dataBase
     (Just "import") -> doImport (safeTail args) dataBase
     (Just "clean") -> doClean (safeTail args) dataBase
-    (Just "add-tag") -> undefined
-    (Just "remove-tag") -> undefined
+    (Just "add-tags") -> doAddTags (safeTail args) dataBase
+    (Just "at") -> doAddTags (safeTail args) dataBase
+    (Just "remove-tags") -> doRemoveTags (safeTail args) dataBase
+    (Just "rt") -> doRemoveTags (safeTail args) dataBase
     (Just "filter") -> doFilter (safeTail args) dataBase
     (Just "remove-dups") -> doRemoveDups (safeTail args) dataBase
     (Just cmd) -> putStrLn $ invalidCommandError cmd

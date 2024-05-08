@@ -4,11 +4,14 @@ module EntryManager
     addUnsavedBookDialog,
     runImportCommand,
     runCleanCommand,
+    runAddTags,
+    runRemoveTags,
   )
 where
 
 import Data.Char (isAlphaNum)
-import Data.List ((\\))
+import Data.List ((\\), nub)
+import Text.Read (readMaybe)
 import DataBase
 import FileManager
 import System.FilePath
@@ -152,3 +155,59 @@ getOrphanEntries files = filter (not . hasFile files)
 
 hasFile :: [FilePath] -> Book -> Bool
 hasFile files book = any (\file -> fileName book == file) files
+
+runAddTags :: FilePath -> [Book] -> IO [Book]
+runAddTags file db = do
+    isFilePresent <- isFileInWorkingDirectory file
+    if isFilePresent
+      then run db []
+      else inputErrorFileNotFound
+  where
+    run :: [Book] -> [Book] -> IO [Book]
+    run [] newDB = do
+        putStrLn "This file does not have a corresponding database entry. Do you wish to create one? [y/N]"
+        wantToCreate <- getLine
+        if wantToCreate == "y"
+          then myCombine (prepareNewEntry file) (pure newDB)
+          else return newDB
+    run (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) newDB =
+      if file == thisFileName
+        then do
+          newTags <- getTags
+          return $ newDB ++ [Book file thisTitle thisAuthor (nub $ newTags ++ theseTags)] ++ bs
+        else run bs (newDB ++ [b])
+
+runRemoveTags :: FilePath -> [Book] -> IO [Book]
+runRemoveTags file db = do
+  isFilePresent <- isFileInWorkingDirectory file
+  if isFilePresent
+    then run db []
+    else inputErrorFileNotFound
+  where
+    run :: [Book] -> [Book] -> IO [Book]
+    run [] _newDB = error "This file doesn not have a corresponding database entry, hence no tag can be removed."
+    run (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) newDB =
+      if file == thisFileName
+        then do
+          tagsToRemove <- getTagsToRemove theseTags
+          return $ newDB ++ [Book thisFileName thisTitle thisAuthor (theseTags \\ tagsToRemove)] ++ bs
+        else run bs (newDB ++ [b])
+    getTagsToRemove :: [Tag] -> IO [Tag]
+    getTagsToRemove tags' = do
+      putStrLn $ unlines [show i ++ ") " ++ tag | (i, tag) <- zip [1 :: Int ..] tags']
+      numberOfTag <- getLine
+      case isValidInteger (length tags') numberOfTag of
+        EmptyInput -> return []
+        ValidInput n -> let tagToRemove = tags' !! (n - 1) in myCombine (pure tagToRemove) $ getTagsToRemove (tags' \\ [tagToRemove])
+        InvalidInput -> do
+          putStrLn $ "Invalid input. Please enter an integer between 1 and " ++ show (length tags') ++ "!"
+          getTagsToRemove tags'
+
+data InputValidation a = ValidInput a | EmptyInput | InvalidInput
+
+isValidInteger :: Int -> String -> InputValidation Int
+isValidInteger _ "" = EmptyInput
+isValidInteger upperLimit x = case readMaybe x :: Maybe Int of
+  Just n -> if n > 0 && n <= upperLimit then ValidInput n else InvalidInput
+  Nothing -> InvalidInput
+  
