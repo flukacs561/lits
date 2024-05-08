@@ -144,7 +144,7 @@ removeOrphanEntryDialog (book : rest) db = do
             "a - auto (say yes to all consequent)",
             "? - print this help"
           ]
-      removeOrphanEntryDialog rest db
+      removeOrphanEntryDialog (book : rest) db
     _ -> removeOrphanEntryDialog rest db
 
 getOrphanEntries :: [FilePath] -> [Book] -> [Book]
