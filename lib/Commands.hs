@@ -18,53 +18,60 @@ import FileManager (createDBFile, removeFile)
 import Filter (runFilterCmd)
 import Formatting (printBooks)
 
+inputErrorTooMany :: a
+inputErrorTooMany = error "Too many arguments"
+
+inputErrorNoFile :: a
+inputErrorNoFile = error "No file specified"
+
 invalidCommandError :: String -> String
 invalidCommandError cmd = "Invalid argument: \"" ++ cmd ++ "\" is not an actual command in LiTS."
 
 doInit :: [String] -> IO ()
 doInit [] = createDBFile
-doInit _ = error "Too many arguments."
+doInit _ = inputErrorTooMany
 
 doList :: [String] -> [Book] -> IO ()
 doList [] = printBooks
-doList _ = error "Too many arguments."
+doList _ = inputErrorTooMany
 
 -- Input validation happend in `parseFilterInput`.
 doFilter :: [String] -> [Book] -> IO ()
 doFilter args db = printBooks $ runFilterCmd args db
 
 doAdd :: [String] -> [Book] -> IO ()
-doAdd [] _ = error "No file specified."
+doAdd [] _ = inputErrorNoFile
 doAdd [file] db =
   if hasFileEntry file db
     then error "This file already has an entry in the database."
     else do
       newBook <- prepareNewEntry file
       writeToDataBase (newBook : db)
-doAdd _ _ = error "Too many arguments."
+doAdd _ _ = inputErrorTooMany
 
 hasFileEntry :: FilePath -> [Book] -> Bool
 hasFileEntry file = any (\book -> fileName book == file)
 
 doDelete :: [String] -> [Book] -> IO ()
-doDelete [] _ = error "No file specified."
+doDelete [] _ = inputErrorNoFile
 doDelete [file] db = do
   writeToDataBase $ removeEntry file db
   removeFile file
-doDelete _ _ = error "Too many arguments."
+doDelete _ _ = inputErrorTooMany
 
 doImport :: [String] -> [Book] -> IO ()
 doImport [] db = do
   newDB <- runImportCommand db
   writeToDataBase newDB
-doImport _ _ = error "Too many arguments."
+doImport _ _ = inputErrorTooMany
 
 doRemoveDups :: [String] -> [Book] -> IO ()
 doRemoveDups [] = writeToDataBase . nub
-doRemoveDups _ = error "Too many arguments."
+doRemoveDups _ = inputErrorTooMany
 
 doClean :: [String] -> [Book] -> IO ()
 doClean [] db = do
   newDB <- runCleanCommand db
   writeToDataBase newDB
-doClean _ _ = error "Too many arguments."
+doClean _ _ = inputErrorTooMany
+

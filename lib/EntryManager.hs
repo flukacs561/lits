@@ -15,6 +15,9 @@ import System.FilePath
 import Utilities ((|||))
 import Formatting
 
+inputErrorFileNotFound :: a
+inputErrorFileNotFound = error "No such file in current directory."
+
 -- The argument should contain exactly one string: the name of the file for which the entry is to be generated.
 prepareNewEntry :: String -> IO Book
 prepareNewEntry file = do
@@ -26,7 +29,7 @@ prepareNewEntry file = do
       putStrLn "Author(s):"
       thisAuthor <- getAuthor
       Book (takeFileName file) thisTitle thisAuthor <$> getTags
-    else error "No such file in current directory."
+    else inputErrorFileNotFound
 
 -- There might be more than one author for a single book, and we want to note all of them.
 getAuthor :: IO [Author]
