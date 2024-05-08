@@ -8,12 +8,14 @@ module Commands
     doImport,
     doRemoveDups,
     doClean,
+    doAddTags,
+    doRemoveTags,
   )
 where
 
 import Data.List (nub)
 import DataBase (Book, fileName, writeToDataBase)
-import EntryManager (prepareNewEntry, removeEntry, runCleanCommand, runImportCommand)
+import EntryManager (prepareNewEntry, removeEntry, runAddTags, runCleanCommand, runImportCommand, runRemoveTags)
 import FileManager (createDBFile, removeFile)
 import Filter (runFilterCmd)
 import Formatting (printBooks)
@@ -75,3 +77,17 @@ doClean [] db = do
   writeToDataBase newDB
 doClean _ _ = inputErrorTooMany
 
+doAddTags :: [FilePath] -> [Book] -> IO ()
+doAddTags [] _ = inputErrorNoFile
+-- Check if file is present in directory
+doAddTags [file] db = do
+  newDB <- runAddTags file db
+  writeToDataBase newDB
+doAddTags _ _ = inputErrorTooMany
+
+doRemoveTags :: [FilePath] -> [Book] -> IO ()
+doRemoveTags [] _ = inputErrorNoFile
+doRemoveTags [file] db = do
+  newDB <- runRemoveTags file db
+  writeToDataBase newDB
+doRemoveTags _ _ = inputErrorTooMany
