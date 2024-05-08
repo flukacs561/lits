@@ -48,12 +48,12 @@ getOneAuthor = do
   putStrLn "Last Name: "
   Author (if thisFirstName == "" then Nothing else Just thisFirstName) <$> getLine
 
-data TagValidationResult = Valid | Invalid | Empty
+data TagValidationResult = ValidTag | InvalidTag | EmptyTag
 
 -- Tags should be nonempty and contain only alphanumeric characters.
 validateTag :: Tag -> TagValidationResult
-validateTag "" = Empty
-validateTag tag = if all (isAlphaNum ||| (== '-')) tag then Valid else Invalid
+validateTag "" = EmptyTag
+validateTag tag = if all (isAlphaNum ||| (== '-')) tag then ValidTag else InvalidTag
 
 -- Tags can be inputed until an empty string is submitted.
 getTags :: IO [Tag]
@@ -63,11 +63,11 @@ getTags = run []
       putStrLn "Next tag: "
       newTag <- getLine
       case validateTag newTag of
-        Valid -> run (newTag : tagList)
-        Invalid -> do
+        ValidTag -> run (newTag : tagList)
+        InvalidTag -> do
           putStrLn "Invalid tag"
           run tagList
-        Empty -> return tagList
+        EmptyTag -> return tagList
 
 removeEntry :: FilePath -> [Book] -> [Book]
 removeEntry file = filter (\book -> fileName book /= file)
