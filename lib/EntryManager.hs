@@ -134,7 +134,7 @@ removeOrphanEntryDialog (book : rest) db = do
   putStrLn $ printMetaData book
   wantToRemove <- getLine
   case wantToRemove of
-    "y" -> myCombine (pure book) $ removeOrphanEntryDialog rest db
+    "y" -> (book :) <$> removeOrphanEntryDialog rest db
     "n" -> removeOrphanEntryDialog rest db
     "s" -> return []
     "a" -> return (book : rest)
@@ -157,52 +157,40 @@ hasFile :: [FilePath] -> Book -> Bool
 hasFile files book = any (\file -> fileName book == file) files
 
 runAddTags :: FilePath -> [Book] -> IO [Book]
-runAddTags file db = do
-    isFilePresent <- isFileInWorkingDirectory file
-    if isFilePresent
-      then run db []
-      else inputErrorFileNotFound
-  where
-    run :: [Book] -> [Book] -> IO [Book]
-    run [] newDB = do
-        putStrLn "This file does not have a corresponding database entry. Do you wish to create one? [y/N]"
-        wantToCreate <- getLine
-        if wantToCreate == "y"
-          then myCombine (prepareNewEntry file) (pure newDB)
-          else return newDB
-    run (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) newDB =
-      if file == thisFileName
-        then do
-          newTags <- getTags
-          return $ newDB ++ [Book file thisTitle thisAuthor (nub $ newTags ++ theseTags)] ++ bs
-        else run bs (newDB ++ [b])
+runAddTags file [] = do
+  putStrLn "This file does not have a corresponding database entry. Do you wish to create one? [y/N]"
+  wantToCreate <- getLine
+  if wantToCreate == "y"
+    then pure <$> prepareNewEntry file
+    else return []
+runAddTags file (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) =
+  if file == thisFileName
+     then do
+       newTags <- getTags
+       return $ Book thisFileName thisTitle thisAuthor (nub $ newTags ++ theseTags) : bs
+     else (b :) <$> runAddTags file bs
 
 runRemoveTags :: FilePath -> [Book] -> IO [Book]
-runRemoveTags file db = do
-  isFilePresent <- isFileInWorkingDirectory file
-  if isFilePresent
-    then run db []
-    else inputErrorFileNotFound
-  where
-    run :: [Book] -> [Book] -> IO [Book]
-    run [] _newDB = error "This file doesn not have a corresponding database entry, hence no tag can be removed."
-    run (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) newDB =
-      if file == thisFileName
-        then do
-          tagsToRemove <- getTagsToRemove theseTags
-          return $ newDB ++ [Book thisFileName thisTitle thisAuthor (theseTags \\ tagsToRemove)] ++ bs
-        else run bs (newDB ++ [b])
-    getTagsToRemove :: [Tag] -> IO [Tag]
-    getTagsToRemove tags' = do
-      putStrLn $ unlines [show i ++ ") " ++ tag | (i, tag) <- zip [1 :: Int ..] tags']
-      numberOfTag <- getLine
-      case isValidInteger (length tags') numberOfTag of
-        EmptyInput -> return []
-        ValidInput n -> let tagToRemove = tags' !! (n - 1) in myCombine (pure tagToRemove) $ getTagsToRemove (tags' \\ [tagToRemove])
-        InvalidInput -> do
-          putStrLn $ "Invalid input. Please enter an integer between 1 and " ++ show (length tags') ++ "!"
-          getTagsToRemove tags'
+runRemoveTags _file [] = error "This file does not have a corresponding database entry, hence no tag can be removed."
+runRemoveTags file (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) =
+  if file == thisFileName
+     then do
+       tagsToRemove <- getTagsToRemove theseTags
+       return $ Book thisFileName thisTitle thisAuthor (theseTags \\ tagsToRemove) : bs
+     else (b :) <$> runRemoveTags file bs
 
+getTagsToRemove :: [Tag] -> IO [Tag]
+getTagsToRemove allTags = do
+    putStrLn "Enter the number of the tag you wish to remove. If you do not wish to remove any (more) of the tags, hit Enter."
+    putStrLn $ unlines [show i ++ ") " ++ tag | (i, tag) <- zip [1 :: Int ..] allTags]
+    numberOfTag <- getLine
+    case isValidInteger (length allTags) numberOfTag of
+      EmptyInput -> return []
+      ValidInput n -> let tagToRemove = allTags !! (n - 1) in (tagToRemove :) <$> getTagsToRemove (allTags \\ [tagToRemove])
+      InvalidInput -> do
+        putStrLn $ "Invalid input. Please enter an integer between 1 and " ++ show (length allTags) ++ "!"
+        getTagsToRemove allTags
+  
 data InputValidation a = ValidInput a | EmptyInput | InvalidInput
 
 isValidInteger :: Int -> String -> InputValidation Int
@@ -210,4 +198,3 @@ isValidInteger _ "" = EmptyInput
 isValidInteger upperLimit x = case readMaybe x :: Maybe Int of
   Just n -> if n > 0 && n <= upperLimit then ValidInput n else InvalidInput
   Nothing -> InvalidInput
-  
