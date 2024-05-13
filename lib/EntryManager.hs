@@ -17,39 +17,40 @@ import Formatting
 import System.FilePath
 import Text.Read (readMaybe)
 import Utilities ((|||))
+import GHC.IO.Handle
 
 inputErrorFileNotFound :: a
 inputErrorFileNotFound = error "No such file in current directory."
 
 -- The argument should contain exactly one string: the name of the file for which the entry is to be generated.
-prepareNewEntry :: String -> IO Book
-prepareNewEntry file = do
+prepareNewEntry ::  Handle -> String -> IO Book
+prepareNewEntry input file = do
   isFilePresent <- isFileInWorkingDirectory file
   if isFilePresent
     then do
       putStrLn "Title: "
-      thisTitle <- getLine
+      thisTitle <- hGetLine input
       putStrLn "Author(s):"
-      thisAuthor <- getAuthor
-      Book (takeFileName file) thisTitle thisAuthor <$> getTags
+      thisAuthor <- getAuthor input
+      Book (takeFileName file) thisTitle thisAuthor <$> getTags input
     else inputErrorFileNotFound
 
 -- There might be more than one author for a single book, and we want to note all of them.
-getAuthor :: IO [Author]
-getAuthor = run []
+getAuthor :: Handle -> IO [Author]
+getAuthor input  = run []
   where
     run authorList = do
-      newAuthor <- getOneAuthor
+      newAuthor <- getOneAuthor input
       putStrLn "Are there any more authors? [y/N] "
-      moreAuthors <- getLine
+      moreAuthors <- hGetLine input
       if moreAuthors == "y" then run (newAuthor : authorList) else return $ newAuthor : authorList
 
-getOneAuthor :: IO Author
-getOneAuthor = do
+getOneAuthor :: Handle -> IO Author
+getOneAuthor input = do
   putStrLn "First name: "
-  thisFirstName <- getLine
+  thisFirstName <- hGetLine input
   putStrLn "Last Name: "
-  Author (if thisFirstName == "" then Nothing else Just thisFirstName) <$> getLine
+  Author (if thisFirstName == "" then Nothing else Just thisFirstName) <$> hGetLine input
 
 data TagValidationResult = ValidTag | InvalidTag | EmptyTag
 
@@ -59,12 +60,12 @@ validateTag "" = EmptyTag
 validateTag tag = if all (isAlphaNum ||| (== '-')) tag then ValidTag else InvalidTag
 
 -- Tags can be inputed until an empty string is submitted.
-getTags :: IO [Tag]
-getTags = run []
+getTags :: Handle -> IO [Tag]
+getTags input = run []
   where
     run tagList = do
       putStrLn "Next tag: "
-      newTag <- getLine
+      newTag <- hGetLine input
       case validateTag newTag of
         ValidTag -> run (newTag : tagList)
         InvalidTag -> do
@@ -75,26 +76,26 @@ getTags = run []
 removeEntry :: FilePath -> [Book] -> [Book]
 removeEntry file = filter (\book -> fileName book /= file)
 
-runImportCommand :: [Book] -> IO [Book]
-runImportCommand db = do
+runImportCommand :: Handle -> [Book] -> IO [Book]
+runImportCommand input db = do
   booksInDirectory <- getBookFilesFromDirectory
-  booksToAdd <- addUnsavedBookDialog $ getUnsavedBooks booksInDirectory db
+  booksToAdd <- addUnsavedBookDialog input $ getUnsavedBooks booksInDirectory db
   return $ booksToAdd ++ db
 
-addUnsavedBookDialog :: [FilePath] -> IO [Book]
-addUnsavedBookDialog [] = do
+addUnsavedBookDialog :: Handle -> [FilePath] -> IO [Book]
+addUnsavedBookDialog _ [] = do
   putStrLn "No more unsaved files."
   return []
-addUnsavedBookDialog (file : rest) = do
+addUnsavedBookDialog input (file : rest) = do
   putStrLn $ "Do you want to create a database entry for " ++ file ++ "? [y/N/s/d/?]"
-  wantToSave <- getLine
+  wantToSave <- hGetLine input
   case wantToSave of
-    "y" -> myCombine (prepareNewEntry file) $ addUnsavedBookDialog rest
-    "n" -> addUnsavedBookDialog rest
+    "y" -> myCombine (prepareNewEntry input file) $ addUnsavedBookDialog input rest
+    "n" -> addUnsavedBookDialog input rest
     "s" -> return []
     "d" -> do
       removeFile file
-      addUnsavedBookDialog rest
+      addUnsavedBookDialog input rest
     "?" -> do
       putStrLn $
         unlines
@@ -104,8 +105,8 @@ addUnsavedBookDialog (file : rest) = do
             "d - delete file",
             "? - print this help"
           ]
-      addUnsavedBookDialog rest
-    _ -> addUnsavedBookDialog rest
+      addUnsavedBookDialog input rest
+    _ -> addUnsavedBookDialog input rest
 
 myCombine :: IO a -> IO [a] -> IO [a]
 myCombine ioElement ioList = do
@@ -119,23 +120,23 @@ getUnsavedBooks files books = filter (not . hasEntry books) files
 hasEntry :: [Book] -> FilePath -> Bool
 hasEntry books file = any (\book -> file == fileName book) books
 
-runCleanCommand :: [Book] -> IO [Book]
-runCleanCommand db = do
+runCleanCommand :: Handle -> [Book] -> IO [Book]
+runCleanCommand input db = do
   booksInDirectory <- getBookFilesFromDirectory
-  entriesToRemove <- removeOrphanEntryDialog (getOrphanEntries booksInDirectory db) db
+  entriesToRemove <- removeOrphanEntryDialog input (getOrphanEntries booksInDirectory db) db
   return $ db \\ entriesToRemove
 
-removeOrphanEntryDialog :: [Book] -> [Book] -> IO [Book]
-removeOrphanEntryDialog [] _ = do
+removeOrphanEntryDialog :: Handle -> [Book] -> [Book] -> IO [Book]
+removeOrphanEntryDialog _ [] _ = do
   putStrLn "No orphan database entries."
   return []
-removeOrphanEntryDialog (book : rest) db = do
+removeOrphanEntryDialog input (book : rest) db = do
   putStrLn "The following entry doesn't have an actual file associated to it in the current directory . Do you want to remove it? [y/N/s/a/?]"
   putStrLn $ printMetaData book
-  wantToRemove <- getLine
+  wantToRemove <- hGetLine input
   case wantToRemove of
-    "y" -> (book :) <$> removeOrphanEntryDialog rest db
-    "n" -> removeOrphanEntryDialog rest db
+    "y" -> (book :) <$> removeOrphanEntryDialog input rest db
+    "n" -> removeOrphanEntryDialog input rest db
     "s" -> return []
     "a" -> return (book : rest)
     "?" -> do
@@ -147,8 +148,8 @@ removeOrphanEntryDialog (book : rest) db = do
             "a - auto (say yes to all consequent)",
             "? - print this help"
           ]
-      removeOrphanEntryDialog (book : rest) db
-    _ -> removeOrphanEntryDialog rest db
+      removeOrphanEntryDialog input (book : rest) db
+    _ -> removeOrphanEntryDialog input rest db
 
 getOrphanEntries :: [FilePath] -> [Book] -> [Book]
 getOrphanEntries files = filter (not . hasFile files)
@@ -156,40 +157,40 @@ getOrphanEntries files = filter (not . hasFile files)
 hasFile :: [FilePath] -> Book -> Bool
 hasFile files book = any (\file -> fileName book == file) files
 
-runAddTags :: FilePath -> [Book] -> IO [Book]
-runAddTags file [] = do
+runAddTags :: Handle -> FilePath -> [Book] -> IO [Book]
+runAddTags input file [] = do
   putStrLn "This file does not have a corresponding database entry. Do you wish to create one? [y/N]"
-  wantToCreate <- getLine
+  wantToCreate <- hGetLine input
   if wantToCreate == "y"
-    then pure <$> prepareNewEntry file
+    then pure <$> prepareNewEntry input file
     else return []
-runAddTags file (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) =
+runAddTags input file (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) =
   if file == thisFileName
     then do
-      newTags <- getTags
+      newTags <- getTags input
       return $ Book thisFileName thisTitle thisAuthor (nub $ newTags ++ theseTags) : bs
-    else (b :) <$> runAddTags file bs
+    else (b :) <$> runAddTags input file bs
 
-runRemoveTags :: FilePath -> [Book] -> IO [Book]
-runRemoveTags _file [] = error "This file does not have a corresponding database entry, hence no tag can be removed."
-runRemoveTags file (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) =
+runRemoveTags :: Handle -> FilePath -> [Book] -> IO [Book]
+runRemoveTags _input _file [] = error "This file does not have a corresponding database entry, hence no tag can be removed."
+runRemoveTags input file (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) =
   if file == thisFileName
     then do
-      tagsToRemove <- getTagsToRemove theseTags
+      tagsToRemove <- getTagsToRemove input theseTags
       return $ Book thisFileName thisTitle thisAuthor (theseTags \\ tagsToRemove) : bs
-    else (b :) <$> runRemoveTags file bs
+    else (b :) <$> runRemoveTags input file bs
 
-getTagsToRemove :: [Tag] -> IO [Tag]
-getTagsToRemove allTags = do
+getTagsToRemove :: Handle -> [Tag] -> IO [Tag]
+getTagsToRemove input allTags = do
   putStrLn "Enter the number of the tag you wish to remove. If you do not wish to remove any (more) of the tags, hit Enter."
   putStrLn $ unlines [show i ++ ") " ++ tag | (i, tag) <- zip [1 :: Int ..] allTags]
-  numberOfTag <- getLine
+  numberOfTag <- hGetLine input
   case isValidInteger (length allTags) numberOfTag of
     EmptyInput -> return []
-    ValidInput n -> let tagToRemove = allTags !! (n - 1) in (tagToRemove :) <$> getTagsToRemove (allTags \\ [tagToRemove])
+    ValidInput n -> let tagToRemove = allTags !! (n - 1) in (tagToRemove :) <$> getTagsToRemove input (allTags \\ [tagToRemove])
     InvalidInput -> do
       putStrLn $ "Invalid input. Please enter an integer between 1 and " ++ show (length allTags) ++ "!"
-      getTagsToRemove allTags
+      getTagsToRemove input allTags
 
 data InputValidation a = ValidInput a | EmptyInput | InvalidInput
 
