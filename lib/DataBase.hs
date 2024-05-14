@@ -3,11 +3,12 @@
 module DataBase where
 
 import Data.Aeson
-import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as BL
 import FileManager
 
 type Tag = String
+
 type Title = String
 
 data Author = Author
@@ -63,10 +64,10 @@ instance ToJSON Book where
 dataBaseReadError :: a
 dataBaseReadError = error "An error occured when reading the database. Its JSON structure might be compromised."
 
-dataBaseWriteError :: String -> a 
+dataBaseWriteError :: String -> a
 dataBaseWriteError newDB = error $ "An error occured when writing the database." ++ show newDB
 
-dataBaseNotFoundError :: a 
+dataBaseNotFoundError :: a
 dataBaseNotFoundError = error $ "No database file found: " ++ dataBaseFileName
 
 -- Check whether the database file is present in the current directory and is valid JSON.
@@ -85,6 +86,7 @@ validateDBFile = do
 
 writeToDataBase :: [Book] -> IO ()
 writeToDataBase newDB = BL.writeFile dataBaseFileName $ encode newDB
+
 -- writeToDataBase newDB = case fmap encode newDB of
 --   Nothing -> error "An error occured when writing "
 --   (Just newJSON) -> B.writeFile dataBaseFileName newJSON

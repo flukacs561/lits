@@ -1,7 +1,7 @@
 module Utilities
   ( safeHead,
     safeTail,
-    (|||)
+    (|||),
   )
 where
 

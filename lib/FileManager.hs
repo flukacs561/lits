@@ -4,7 +4,7 @@ module FileManager
     dataBaseFileName,
     dataBaseFile,
     getBookFilesFromDirectory,
-    removeFile
+    removeFile,
   )
 where
 
