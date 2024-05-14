@@ -1,12 +1,18 @@
 module Main where
 
+import DataBase
+import EntryManager
 import Filter
+import System.IO
 import Test.Tasty
 import Test.Tasty.HUnit
 import qualified TestUtils as TU
 
 main :: IO ()
-main = defaultMain $ testGroup "testFilter" [testParseFilterInput, testRunFilter]
+main = defaultMain $ testGroup "all tests" [testFilter, testCommands]
+
+testFilter :: TestTree
+testFilter = testGroup "testFilter" [testParseFilterInput, testRunFilter]
 
 testParseFilterInput :: TestTree
 testParseFilterInput =
@@ -64,3 +70,24 @@ testRunFilter =
     ]
   where
     books = TU.testDB
+
+testCommands :: TestTree
+testCommands = testGroup "integration tests for commands" [testAdd]
+
+testAdd :: TestTree
+testAdd =
+  testGroup
+    "test `add' command"
+    [ let testResult = do
+            mockIOHandle <- openFile "sampleTest" ReadMode
+            discardHandle <- TU.getNullHandle
+            prepareNewEntry mockIOHandle discardHandle "toldi_arany-janos.epub"
+          newEntry = Book "toldi_arany-janos.epub" "Toldi" [Author (Just "János") "Arany"] ["petrencesrud", "folkish", "poetry", "hungarian"]
+       in testCase "add a single book" $ testResult @?>>= pure newEntry
+    ]
+
+(@?>>=) :: (Eq a, Show a, HasCallStack) => IO a -> IO a -> Assertion
+mx @?>>= my = do
+  x <- mx
+  y <- my
+  x @?= y
