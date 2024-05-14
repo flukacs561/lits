@@ -19,7 +19,7 @@ import EntryManager (prepareNewEntry, removeEntry, runAddTags, runCleanCommand, 
 import FileManager (createDBFile, removeFile)
 import Filter (runFilterCmd)
 import Formatting (printBooks)
-import GHC.IO.StdHandles ( stdin )
+import GHC.IO.StdHandles (stdin, stdout)
 
 inputErrorTooMany :: a
 inputErrorTooMany = error "Too many arguments"
@@ -48,7 +48,7 @@ doAdd [file] db =
   if hasFileEntry file db
     then error "This file already has an entry in the database."
     else do
-      newBook <- prepareNewEntry stdin file
+      newBook <- prepareNewEntry stdin stdout file
       writeToDataBase (newBook : db)
 doAdd _ _ = inputErrorTooMany
 
@@ -64,7 +64,7 @@ doDelete _ _ = inputErrorTooMany
 
 doImport :: [String] -> [Book] -> IO ()
 doImport [] db = do
-  newDB <- runImportCommand stdin db
+  newDB <- runImportCommand stdin stdout db
   writeToDataBase newDB
 doImport _ _ = inputErrorTooMany
 
@@ -74,20 +74,20 @@ doRemoveDups _ = inputErrorTooMany
 
 doClean :: [String] -> [Book] -> IO ()
 doClean [] db = do
-  newDB <- runCleanCommand stdin db
+  newDB <- runCleanCommand stdin stdout db
   writeToDataBase newDB
 doClean _ _ = inputErrorTooMany
 
 doAddTags :: [FilePath] -> [Book] -> IO ()
 doAddTags [] _ = inputErrorNoFile
 doAddTags [file] db = do
-  newDB <- runAddTags stdin file db
+  newDB <- runAddTags stdin stdout file db
   writeToDataBase newDB
 doAddTags _ _ = inputErrorTooMany
 
 doRemoveTags :: [FilePath] -> [Book] -> IO ()
 doRemoveTags [] _ = inputErrorNoFile
 doRemoveTags [file] db = do
-  newDB <- runRemoveTags stdin file db
+  newDB <- runRemoveTags stdin stdout file db
   writeToDataBase newDB
 doRemoveTags _ _ = inputErrorTooMany
