@@ -1,8 +1,8 @@
 module Filter where
 
+import Data.Char (toLower)
 import DataBase
 import Utilities
-import Data.Char (toLower)
 
 data FilterO = FilterO
   { titleF :: Maybe String,
@@ -81,4 +81,4 @@ parseFilterInput input = run input $ Just (FilterO Nothing Nothing [])
       [] -> Nothing
       tagsM' -> run (dropWhile (\str -> head str /= '-') strs) $ Just (FilterO titleM authorM tagsM')
     run _ _ = Nothing
-  
+

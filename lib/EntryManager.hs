@@ -10,13 +10,13 @@ module EntryManager
 where
 
 import Data.Char (isAlphaNum)
-import Data.List ((\\), nub)
-import Text.Read (readMaybe)
+import Data.List (nub, (\\))
 import DataBase
 import FileManager
-import System.FilePath
-import Utilities ((|||))
 import Formatting
+import System.FilePath
+import Text.Read (readMaybe)
+import Utilities ((|||))
 
 inputErrorFileNotFound :: a
 inputErrorFileNotFound = error "No such file in current directory."
@@ -165,32 +165,32 @@ runAddTags file [] = do
     else return []
 runAddTags file (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) =
   if file == thisFileName
-     then do
-       newTags <- getTags
-       return $ Book thisFileName thisTitle thisAuthor (nub $ newTags ++ theseTags) : bs
-     else (b :) <$> runAddTags file bs
+    then do
+      newTags <- getTags
+      return $ Book thisFileName thisTitle thisAuthor (nub $ newTags ++ theseTags) : bs
+    else (b :) <$> runAddTags file bs
 
 runRemoveTags :: FilePath -> [Book] -> IO [Book]
 runRemoveTags _file [] = error "This file does not have a corresponding database entry, hence no tag can be removed."
 runRemoveTags file (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) =
   if file == thisFileName
-     then do
-       tagsToRemove <- getTagsToRemove theseTags
-       return $ Book thisFileName thisTitle thisAuthor (theseTags \\ tagsToRemove) : bs
-     else (b :) <$> runRemoveTags file bs
+    then do
+      tagsToRemove <- getTagsToRemove theseTags
+      return $ Book thisFileName thisTitle thisAuthor (theseTags \\ tagsToRemove) : bs
+    else (b :) <$> runRemoveTags file bs
 
 getTagsToRemove :: [Tag] -> IO [Tag]
 getTagsToRemove allTags = do
-    putStrLn "Enter the number of the tag you wish to remove. If you do not wish to remove any (more) of the tags, hit Enter."
-    putStrLn $ unlines [show i ++ ") " ++ tag | (i, tag) <- zip [1 :: Int ..] allTags]
-    numberOfTag <- getLine
-    case isValidInteger (length allTags) numberOfTag of
-      EmptyInput -> return []
-      ValidInput n -> let tagToRemove = allTags !! (n - 1) in (tagToRemove :) <$> getTagsToRemove (allTags \\ [tagToRemove])
-      InvalidInput -> do
-        putStrLn $ "Invalid input. Please enter an integer between 1 and " ++ show (length allTags) ++ "!"
-        getTagsToRemove allTags
-  
+  putStrLn "Enter the number of the tag you wish to remove. If you do not wish to remove any (more) of the tags, hit Enter."
+  putStrLn $ unlines [show i ++ ") " ++ tag | (i, tag) <- zip [1 :: Int ..] allTags]
+  numberOfTag <- getLine
+  case isValidInteger (length allTags) numberOfTag of
+    EmptyInput -> return []
+    ValidInput n -> let tagToRemove = allTags !! (n - 1) in (tagToRemove :) <$> getTagsToRemove (allTags \\ [tagToRemove])
+    InvalidInput -> do
+      putStrLn $ "Invalid input. Please enter an integer between 1 and " ++ show (length allTags) ++ "!"
+      getTagsToRemove allTags
+
 data InputValidation a = ValidInput a | EmptyInput | InvalidInput
 
 isValidInteger :: Int -> String -> InputValidation Int
