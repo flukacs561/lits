@@ -1,6 +1,7 @@
 module Filter where
 
 import Data.Char (toLower)
+import qualified Data.Set as Set
 import DataBase
 import Utilities
 
@@ -37,7 +38,7 @@ runFilterAuthor :: Maybe String -> [Book] -> [Book]
 runFilterAuthor = filterField author authorMatcher
 
 -- Filters out those books where the provided string matches either the first or last name of any of the authors.
-authorMatcher :: String -> [Author] -> Bool
+authorMatcher :: String -> Set.Set Author -> Bool
 authorMatcher match = any matchSingleAuthor
   where
     matchSingleAuthor thisAuthor = matchFirstName thisAuthor || matchLastName thisAuthor
