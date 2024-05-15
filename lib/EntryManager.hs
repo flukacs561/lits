@@ -37,14 +37,14 @@ prepareNewEntry input output file = do
     else inputErrorFileNotFound
 
 -- There might be more than one author for a single book, and we want to note all of them.
-getAuthor :: Handle -> Handle -> IO [Author]
-getAuthor input output = run []
+getAuthor :: Handle -> Handle -> IO (Set.Set Author)
+getAuthor input output = run Set.empty
   where
     run authorList = do
       newAuthor <- getOneAuthor input output
       hPutStrLn output "Are there any more authors? [y/N] "
       moreAuthors <- hGetLine input
-      if moreAuthors == "y" then run (newAuthor : authorList) else return $ newAuthor : authorList
+      if moreAuthors == "y" then run (Set.insert newAuthor authorList) else return $ Set.insert newAuthor authorList
 
 getOneAuthor :: Handle -> Handle -> IO Author
 getOneAuthor input output = do

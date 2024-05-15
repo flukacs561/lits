@@ -81,7 +81,7 @@ testAdd =
             Book
               "gravitys-rainbow_thomas-pynchon.epub"
               "Gravity's Rainbow"
-              [Author (Just "Thomas") "Pynchon"]
+              (Set.singleton $ Author (Just "Thomas") "Pynchon")
               $ Set.fromList
                 ["satire", "english", "novel", "american"]
           testDescription = "check all fields filled"
@@ -91,7 +91,7 @@ testAdd =
             Book
               "iliad_homer.epub"
               "Iliad"
-              [Author Nothing "Homer"]
+              (Set.singleton $ Author Nothing "Homer")
               $ Set.fromList
                 ["epic", "ancient", "greek", "troy"]
           testDescription = "check author no first name"
@@ -101,9 +101,11 @@ testAdd =
             Book
               "sicp.pdf"
               "Structure and Interpretation of Computer Programs"
-              [ Author (Just "Gerald Jay") "Sussman",
-                Author (Just "Harold") "Abelson"
-              ]
+              ( Set.fromList
+                  [ Author (Just "Harold") "Abelson",
+                    Author (Just "Gerald Jay") "Sussman"
+                  ]
+              )
               $ Set.fromList
                 ["cs", "wizzard", "lisp", "scheme"]
           testDescription = "check multiple authors"
@@ -113,7 +115,7 @@ testAdd =
             Book
               "infinite-jest_david-foster-wallace.epub"
               "Infinite Jest"
-              [Author (Just "David Foster") "Wallace"]
+              (Set.singleton $ Author (Just "David Foster") "Wallace")
               Set.empty
           testDescription = "check no tags"
        in runTest testDescription mockInput expectedResult
