@@ -18,7 +18,7 @@ import Formatting (printMetaData)
 import System.FilePath (takeFileName)
 import System.IO (Handle, hGetLine, hPutStrLn)
 import Text.Read (readMaybe)
-import Utilities ((|||))
+import Utilities ((|||), monadCons)
 
 inputErrorFileNotFound :: a
 inputErrorFileNotFound = error "No such file in current directory."
@@ -91,7 +91,7 @@ addUnsavedBookDialog input output (file : rest) = do
   hPutStrLn output $ "Do you want to create a database entry for " <> file <> "? [y/N/s/d/?]"
   wantToSave <- hGetLine input
   case wantToSave of
-    "y" -> myCombine (prepareNewEntry input output file) $ addUnsavedBookDialog input output rest
+    "y" -> monadCons (prepareNewEntry input output file) $ addUnsavedBookDialog input output rest
     "n" -> addUnsavedBookDialog input output rest
     "s" -> return []
     "d" -> do
@@ -108,12 +108,6 @@ addUnsavedBookDialog input output (file : rest) = do
           ]
       addUnsavedBookDialog input output rest
     _ -> addUnsavedBookDialog input output rest
-
-myCombine :: IO a -> IO [a] -> IO [a]
-myCombine ioElement ioList = do
-  element <- ioElement
-  list <- ioList
-  return $ element : list
 
 getUnsavedBooks :: [FilePath] -> [Book] -> [FilePath]
 getUnsavedBooks files books = filter (not . hasEntry books) files
