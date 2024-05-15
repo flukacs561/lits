@@ -18,6 +18,9 @@ data Author = Author
   }
   deriving (Show, Eq)
 
+instance Ord Author where
+  (Author _ lastName1) <= (Author _ lastName2) = lastName1 <= lastName2
+
 instance FromJSON Author where
   parseJSON (Object v) =
     Author
@@ -39,7 +42,7 @@ instance ToJSON Author where
 data Book = Book
   { fileName :: String,
     title :: Title,
-    author :: [Author],
+    author :: Set.Set Author,
     tags :: Set.Set Tag
   }
   deriving (Show, Eq)

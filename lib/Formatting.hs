@@ -4,22 +4,12 @@ module Formatting
   )
 where
 
-import Data.List (sortBy)
+import Data.List (sortOn)
 import Data.Set
 import DataBase
-import Utilities
 
 printBooks :: [Book] -> IO ()
-printBooks books = putStrLn $ unlines (printMetaData <$> sortByAuthorLastname books)
-
-sortByAuthorLastname :: [Book] -> [Book]
-sortByAuthorLastname = sortBy compareAuthorLastName
-
-compareAuthorLastName :: Book -> Book -> Ordering
-compareAuthorLastName book1 book2 = compare author1 author2
-  where
-    author1 = maybe "" lastName $ safeHead $ author book1
-    author2 = maybe "" lastName $ safeHead $ author book2
+printBooks books = putStrLn $ unlines (printMetaData <$> sortOn author books)
 
 printMetaData :: Book -> String
 printMetaData (Book _ thisTitle thisAuthor theseTags) =
