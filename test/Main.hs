@@ -10,15 +10,15 @@ import Test.Tasty.HUnit
 import qualified TestUtils as TU
 
 main :: IO ()
-main = defaultMain $ testGroup "Great American Novel Test Suite" [testFilter, testCommands]
+main = defaultMain $ testGroup "Great American Novel Test Suite" [testFilter, testAdd]
 
 testFilter :: TestTree
-testFilter = testGroup "testFilter" [testParseFilterInput, testRunFilter]
+testFilter = testGroup "test filtering functionality" [testParseFilterInput, testRunFilter]
 
 testParseFilterInput :: TestTree
 testParseFilterInput =
   testGroup
-    "test parseFilterInput"
+    "test filter input parser"
     [ let testDescription = "all 3 fields provided"
           testInput = words "-t maths cat -T higher -a lurie"
           resultingFilterO = Just $ FilterO (Just "higher") (Just "lurie") ["maths", "cat"]
@@ -46,7 +46,7 @@ testParseFilterInput =
 testRunFilter :: TestTree
 testRunFilter =
   testGroup
-    "test runFilter"
+    "test `filter' command"
     [ let testDescription = "only tags"
           testFilterO = Just $ FilterO Nothing Nothing ["american", "indian"]
           targetBook = "the-last-of-the-mohicans_j-f-cooper.epub"
@@ -72,29 +72,64 @@ testRunFilter =
   where
     books = TU.testDB
 
-testCommands :: TestTree
-testCommands = testGroup "integration tests for commands" [testAdd]
-
 testAdd :: TestTree
 testAdd =
   testGroup
     "test `add' command"
-    [ let testResult = do
-            mockIOHandle <- openFile "add-gravitys-rainbow-test-input" ReadMode
-            discardHandle <- TU.getNullHandle
-            prepareNewEntry mockIOHandle discardHandle "gravitys-rainbow_thomas-pynchon.epub"
-          newEntry =
+    [ let mockInput = "add-gravitys-rainbow"
+          expectedResult =
             Book
               "gravitys-rainbow_thomas-pynchon.epub"
               "Gravity's Rainbow"
               [Author (Just "Thomas") "Pynchon"]
               $ Set.fromList
                 ["satire", "english", "novel", "american"]
-       in testCase "add Gravity's Rainbow" $ testResult @?>>= pure newEntry
+          testDescription = "check all fields filled"
+       in runTest testDescription mockInput expectedResult,
+      let mockInput = "add-iliad"
+          expectedResult =
+            Book
+              "iliad_homer.epub"
+              "Iliad"
+              [Author Nothing "Homer"]
+              $ Set.fromList
+                ["epic", "ancient", "greek", "troy"]
+          testDescription = "check author no first name"
+       in runTest testDescription mockInput expectedResult,
+      let mockInput = "add-sicp"
+          expectedResult =
+            Book
+              "sicp.pdf"
+              "Structure and Interpretation of Computer Programs"
+              [ Author (Just "Gerald Jay") "Sussman",
+                Author (Just "Harold") "Abelson"
+              ]
+              $ Set.fromList
+                ["cs", "wizzard", "lisp", "scheme"]
+          testDescription = "check multiple authors"
+       in runTest testDescription mockInput expectedResult,
+      let mockInput = "add-infinite-jest"
+          expectedResult =
+            Book
+              "infinite-jest_david-foster-wallace.epub"
+              "Infinite Jest"
+              [Author (Just "David Foster") "Wallace"]
+              Set.empty
+          testDescription = "check no tags"
+       in runTest testDescription mockInput expectedResult
     ]
+  where
+    mockInputFolder = "mock-input/"
+    runTest :: TestName -> String -> Book -> TestTree
+    runTest testDescription mockInput expectedResult =
+      let testResult = do
+            mockIOHandle <- openFile (mockInputFolder <> mockInput) ReadMode
+            discardHandle <- TU.getNullHandle
+            prepareNewEntry mockIOHandle discardHandle (fileName expectedResult)
+          testDescription' = "add " <> title expectedResult <> " (" <> testDescription <> ")"
+       in testCase testDescription' $ testResult @?>>= expectedResult
 
-(@?>>=) :: (Eq a, Show a, HasCallStack) => IO a -> IO a -> Assertion
-mx @?>>= my = do
-  x <- mx
-  y <- my
+(@?>>=) :: (Eq a, Show a, HasCallStack) => IO a -> a -> Assertion
+ioX @?>>= y = do
+  x <- ioX
   x @?= y
