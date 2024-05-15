@@ -30,6 +30,7 @@ library
                     , aeson
                     , bytestring
                     , directory
+                    , containers
                     , filepath
                     , text
     hs-source-dirs:   lib
