@@ -4,7 +4,8 @@ module Formatting
   )
 where
 
-import Data.List (sort, sortBy)
+import Data.List (sortBy)
+import Data.Set
 import DataBase
 import Utilities
 
@@ -21,7 +22,7 @@ compareAuthorLastName book1 book2 = compare author1 author2
     author2 = maybe "" lastName $ safeHead $ author book2
 
 printMetaData :: Book -> String
-printMetaData (Book _ thisTitle thisAuthor theseTags) = thisTitle ++ " - " ++ printAllAuthors thisAuthor ++ " (" ++ printTags (sort theseTags) ++ ")"
+printMetaData (Book _ thisTitle thisAuthor theseTags) = thisTitle ++ " - " ++ printAllAuthors thisAuthor ++ " (" ++ printTags (toAscList theseTags) ++ ")"
 
 printAuthor :: Author -> String
 printAuthor (Author Nothing thisLastName) = thisLastName

@@ -5,6 +5,7 @@ module DataBase where
 import Data.Aeson
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
+import qualified Data.Set as Set
 import FileManager
 
 type Tag = String
@@ -39,7 +40,7 @@ data Book = Book
   { fileName :: String,
     title :: Title,
     author :: [Author],
-    tags :: [Tag]
+    tags :: Set.Set Tag
   }
   deriving (Show, Eq)
 

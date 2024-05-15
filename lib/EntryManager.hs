@@ -10,7 +10,8 @@ module EntryManager
 where
 
 import Data.Char (isAlphaNum)
-import Data.List (nub, (\\))
+import Data.List ((\\))
+import qualified Data.Set as Set
 import DataBase
 import FileManager
 import Formatting (printMetaData)
@@ -60,14 +61,14 @@ validateTag "" = EmptyTag
 validateTag tag = if all (isAlphaNum ||| (== '-')) tag then ValidTag else InvalidTag
 
 -- Tags can be inputed until an empty string is submitted.
-getTags :: Handle -> Handle -> IO [Tag]
-getTags input output = run []
+getTags :: Handle -> Handle -> IO (Set.Set Tag)
+getTags input output = run Set.empty
   where
     run tagList = do
       hPutStrLn output "Next tag: "
       newTag <- hGetLine input
       case validateTag newTag of
-        ValidTag -> run (newTag : tagList)
+        ValidTag -> run (Set.insert newTag tagList)
         InvalidTag -> do
           hPutStrLn output "Invalid tag"
           run tagList
@@ -167,9 +168,9 @@ runAddTags input output file [] = do
 runAddTags input output file (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) =
   if file == thisFileName
     then do
-      newTags <- getTags output input
-      return $ Book thisFileName thisTitle thisAuthor (nub $ newTags ++ theseTags) : bs
-    else (b :) <$> runAddTags output input file bs
+      newTags <- getTags input output
+      return $ Book thisFileName thisTitle thisAuthor (Set.union newTags theseTags) : bs
+    else (b :) <$> runAddTags input output file bs
 
 runRemoveTags :: Handle -> Handle -> FilePath -> [Book] -> IO [Book]
 runRemoveTags _input _output _file [] = error "This file does not have a corresponding database entry, hence no tag can be removed."
@@ -178,17 +179,20 @@ runRemoveTags input output file (b@(Book thisFileName thisTitle thisAuthor these
     then do
 <<<<<<< HEAD
       tagsToRemove <- getTagsToRemove input output theseTags
-      return $ Book thisFileName thisTitle thisAuthor (theseTags \\ tagsToRemove) : bs
+      return $ Book thisFileName thisTitle thisAuthor (Set.difference theseTags tagsToRemove) : bs
     else (b :) <$> runRemoveTags input output file bs
 
-getTagsToRemove :: Handle -> Handle -> [Tag] -> IO [Tag]
+-- TODO Implement new lookup
+getTagsToRemove :: Handle -> Handle -> Set.Set Tag -> IO (Set.Set Tag)
 getTagsToRemove input output allTags = do
   hPutStrLn output "Enter the number of the tag you wish to remove. If you do not wish to remove any (more) of the tags, hit Enter."
-  hPutStrLn output $ unlines [show i ++ ") " ++ tag | (i, tag) <- zip [1 :: Int ..] allTags]
+  hPutStrLn output $ unlines [show i ++ ") " ++ tag | (i, tag) <- zip [1 :: Int ..] (Set.toAscList allTags)]
   numberOfTag <- hGetLine input
   case isValidInteger (length allTags) numberOfTag of
-    EmptyInput -> return []
-    ValidInput n -> let tagToRemove = allTags !! (n - 1) in (tagToRemove :) <$> getTagsToRemove input output (allTags \\ [tagToRemove])
+    EmptyInput -> return Set.empty
+    ValidInput n ->
+      let tagToRemove = Set.toAscList allTags !! (n - 1)
+       in Set.insert tagToRemove <$> getTagsToRemove input output (Set.delete tagToRemove allTags)
     InvalidInput -> do
       hPutStrLn output $ "Invalid input. Please enter an integer between 1 and " ++ show (length allTags) ++ "!"
       getTagsToRemove input output allTags
