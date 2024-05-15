@@ -1,5 +1,6 @@
 module Main where
 
+import qualified Data.Set as Set
 import DataBase
 import EntryManager
 import Filter
@@ -9,7 +10,7 @@ import Test.Tasty.HUnit
 import qualified TestUtils as TU
 
 main :: IO ()
-main = defaultMain $ testGroup "all tests" [testFilter, testCommands]
+main = defaultMain $ testGroup "Great American Novel Test Suite" [testFilter, testCommands]
 
 testFilter :: TestTree
 testFilter = testGroup "testFilter" [testParseFilterInput, testRunFilter]
@@ -79,11 +80,17 @@ testAdd =
   testGroup
     "test `add' command"
     [ let testResult = do
-            mockIOHandle <- openFile "sampleTest" ReadMode
+            mockIOHandle <- openFile "add-gravitys-rainbow-test-input" ReadMode
             discardHandle <- TU.getNullHandle
-            prepareNewEntry mockIOHandle discardHandle "toldi_arany-janos.epub"
-          newEntry = Book "toldi_arany-janos.epub" "Toldi" [Author (Just "János") "Arany"] ["petrencesrud", "folkish", "poetry", "hungarian"]
-       in testCase "add a single book" $ testResult @?>>= pure newEntry
+            prepareNewEntry mockIOHandle discardHandle "gravitys-rainbow_thomas-pynchon.epub"
+          newEntry =
+            Book
+              "gravitys-rainbow_thomas-pynchon.epub"
+              "Gravity's Rainbow"
+              [Author (Just "Thomas") "Pynchon"]
+              $ Set.fromList
+                ["satire", "english", "novel", "american"]
+       in testCase "add Gravity's Rainbow" $ testResult @?>>= pure newEntry
     ]
 
 (@?>>=) :: (Eq a, Show a, HasCallStack) => IO a -> IO a -> Assertion
