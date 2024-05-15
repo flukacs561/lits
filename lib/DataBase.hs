@@ -66,10 +66,10 @@ dataBaseReadError :: a
 dataBaseReadError = error "An error occured when reading the database. Its JSON structure might be compromised."
 
 dataBaseWriteError :: String -> a
-dataBaseWriteError newDB = error $ "An error occured when writing the database." ++ show newDB
+dataBaseWriteError newDB = error $ "An error occured when writing the database." <> show newDB
 
 dataBaseNotFoundError :: a
-dataBaseNotFoundError = error $ "No database file found: " ++ dataBaseFileName
+dataBaseNotFoundError = error $ "No database file found: " <> dataBaseFileName
 
 -- Check whether the database file is present in the current directory and is valid JSON.
 validateDBFile :: IO [Book]

@@ -28,7 +28,7 @@ inputErrorNoFile :: a
 inputErrorNoFile = error "No file specified"
 
 invalidCommandError :: String -> String
-invalidCommandError cmd = "Invalid argument: \"" ++ cmd ++ "\" is not an actual command in LiTS."
+invalidCommandError cmd = "Invalid argument: \"" <> cmd <> "\" is not an actual command in LiTS."
 
 doInit :: [String] -> IO ()
 doInit [] = createDBFile

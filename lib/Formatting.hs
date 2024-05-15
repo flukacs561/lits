@@ -22,18 +22,19 @@ compareAuthorLastName book1 book2 = compare author1 author2
     author2 = maybe "" lastName $ safeHead $ author book2
 
 printMetaData :: Book -> String
-printMetaData (Book _ thisTitle thisAuthor theseTags) = thisTitle ++ " - " ++ printAllAuthors thisAuthor ++ " (" ++ printTags (toAscList theseTags) ++ ")"
+printMetaData (Book _ thisTitle thisAuthor theseTags) =
+  thisTitle <> " - " <> printAllAuthors (toAscList thisAuthor) <> " (" <> printTags (toAscList theseTags) <> ")"
 
 printAuthor :: Author -> String
 printAuthor (Author Nothing thisLastName) = thisLastName
-printAuthor (Author (Just thisFirstName) thisLastName) = thisFirstName ++ " " ++ thisLastName
+printAuthor (Author (Just thisFirstName) thisLastName) = thisFirstName <> " " <> thisLastName
 
 printAllAuthors :: [Author] -> String
 printAllAuthors [] = ""
 printAllAuthors [a] = printAuthor a
-printAllAuthors (a : as) = printAuthor a ++ ", " ++ printAllAuthors as
+printAllAuthors (a : as) = printAuthor a <> ", " <> printAllAuthors as
 
 printTags :: [Tag] -> String
 printTags [] = ""
 printTags [tag] = tag
-printTags (t : ts) = t ++ ", " ++ printTags ts
+printTags (t : ts) = t <> ", " <> printTags ts
