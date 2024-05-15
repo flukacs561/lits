@@ -2,6 +2,7 @@ module Utilities
   ( safeHead,
     safeTail,
     (|||),
+    monadCons,
   )
 where
 
@@ -15,3 +16,9 @@ safeTail l = tail l
 
 (|||) :: (a -> Bool) -> (a -> Bool) -> a -> Bool
 (|||) p1 p2 a = p1 a || p2 a
+
+monadCons :: (Monad m) => m a -> m [a] -> m [a]
+monadCons ioElement ioList = do
+  element <- ioElement
+  list <- ioList
+  return $ element : list

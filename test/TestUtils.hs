@@ -3,6 +3,7 @@ module TestUtils where
 import qualified Data.Set as Set
 import DataBase
 import System.IO (Handle, IOMode (WriteMode), openFile)
+import Test.Tasty.HUnit
 
 {- The test database consists of the following entries:
 Little Women - Louise May Alcott (american, english, novel, women)
@@ -88,3 +89,8 @@ booksAllInList target books = all (`bookInList` books) target
 
 getNullHandle :: IO Handle
 getNullHandle = openFile "/dev/null" WriteMode -- For Unix-like systems
+
+(@?>>=) :: (Eq a, Show a, HasCallStack) => IO a -> a -> Assertion
+ioX @?>>= y = do
+  x <- ioX
+  x @?= y
