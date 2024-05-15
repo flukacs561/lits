@@ -81,14 +81,14 @@ runImportCommand :: Handle -> Handle -> [Book] -> IO [Book]
 runImportCommand input output db = do
   booksInDirectory <- getBookFilesFromDirectory
   booksToAdd <- addUnsavedBookDialog input output $ getUnsavedBooks booksInDirectory db
-  return $ booksToAdd ++ db
+  return $ booksToAdd <> db
 
 addUnsavedBookDialog :: Handle -> Handle -> [FilePath] -> IO [Book]
 addUnsavedBookDialog _ output [] = do
   hPutStrLn output "No more unsaved files."
   return []
 addUnsavedBookDialog input output (file : rest) = do
-  hPutStrLn output $ "Do you want to create a database entry for " ++ file ++ "? [y/N/s/d/?]"
+  hPutStrLn output $ "Do you want to create a database entry for " <> file <> "? [y/N/s/d/?]"
   wantToSave <- hGetLine input
   case wantToSave of
     "y" -> myCombine (prepareNewEntry input output file) $ addUnsavedBookDialog input output rest
@@ -186,7 +186,7 @@ runRemoveTags input output file (b@(Book thisFileName thisTitle thisAuthor these
 getTagsToRemove :: Handle -> Handle -> Set.Set Tag -> IO (Set.Set Tag)
 getTagsToRemove input output allTags = do
   hPutStrLn output "Enter the number of the tag you wish to remove. If you do not wish to remove any (more) of the tags, hit Enter."
-  hPutStrLn output $ unlines [show i ++ ") " ++ tag | (i, tag) <- zip [1 :: Int ..] (Set.toAscList allTags)]
+  hPutStrLn output $ unlines [show i <> ") " <> tag | (i, tag) <- zip [1 :: Int ..] (Set.toAscList allTags)]
   numberOfTag <- hGetLine input
   case isValidInteger (length allTags) numberOfTag of
     EmptyInput -> return Set.empty
@@ -194,7 +194,7 @@ getTagsToRemove input output allTags = do
       let tagToRemove = Set.toAscList allTags !! (n - 1)
        in Set.insert tagToRemove <$> getTagsToRemove input output (Set.delete tagToRemove allTags)
     InvalidInput -> do
-      hPutStrLn output $ "Invalid input. Please enter an integer between 1 and " ++ show (length allTags) ++ "!"
+      hPutStrLn output $ "Invalid input. Please enter an integer between 1 and " <> show (length allTags) <> "!"
       getTagsToRemove input output allTags
 
 data InputValidation a = ValidInput a | EmptyInput | InvalidInput
