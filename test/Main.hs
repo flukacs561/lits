@@ -4,7 +4,6 @@ import qualified Data.Set as Set
 import DataBase
 import EntryManager
 import Filter
-import System.IO
 import Test.Tasty
 import Test.Tasty.HUnit
 import TestUtils
@@ -53,27 +52,25 @@ testRunFilter =
     [ let testDescription = "only tags"
           testFilterO = Just $ FilterO Nothing Nothing ["american", "indian"]
           targetBook = "the-last-of-the-mohicans_j-f-cooper.epub"
-       in testCase testDescription $ bookInList targetBook (runFilter testFilterO books) @?= True,
+       in testCase testDescription $ bookInList targetBook (runFilter testFilterO testDB) @?= True,
       let testDescription = "non-matcher book is excluded"
           testFilterO = Just $ FilterO Nothing Nothing ["american", "whale"]
           targetBook = "the-last-of-the-mohicans_j-f-cooper.epub"
-       in testCase testDescription $ bookInList targetBook (runFilter testFilterO books) @?= False,
+       in testCase testDescription $ bookInList targetBook (runFilter testFilterO testDB) @?= False,
       let testDescription = "multiple hits"
           testFilterO = Just $ FilterO Nothing Nothing ["english", "novel"]
-       in testCase testDescription $ runFilter testFilterO books @?= books,
+       in testCase testDescription $ runFilter testFilterO testDB @?= testDB,
       let testDescription = "match author first and last name"
           testFilterO = Just $ FilterO Nothing (Just "H") ["novel", "american"]
           targetBooks =
             [ "moby-dick_herman-melville.epub",
               "uncle-toms-cabin_harriet-beecher-stowe.epub"
             ]
-       in testCase testDescription $ booksAllInList targetBooks (runFilter testFilterO books) @?= True,
+       in testCase testDescription $ booksAllInList targetBooks (runFilter testFilterO testDB) @?= True,
       let testDescription = "if empty FilterO, match all books"
           testFilterO = Nothing
-       in testCase testDescription $ runFilter testFilterO books @?= books
+       in testCase testDescription $ runFilter testFilterO testDB @?= testDB
     ]
-  where
-    books = testDB
 
 testAdd :: TestTree
 testAdd =
@@ -88,7 +85,7 @@ testAdd =
               $ Set.fromList
                 ["satire", "english", "novel", "american"]
           testDescription = "check all fields filled"
-       in runTest testDescription mockInput expectedResult,
+       in buildTest testDescription mockInput expectedResult,
       let mockInput = "add-iliad"
           expectedResult =
             Book
@@ -98,7 +95,7 @@ testAdd =
               $ Set.fromList
                 ["epic", "ancient", "greek", "troy"]
           testDescription = "check author no first name"
-       in runTest testDescription mockInput expectedResult,
+       in buildTest testDescription mockInput expectedResult,
       let mockInput = "add-sicp"
           expectedResult =
             Book
@@ -112,7 +109,7 @@ testAdd =
               $ Set.fromList
                 ["cs", "wizzard", "lisp", "scheme"]
           testDescription = "check multiple authors"
-       in runTest testDescription mockInput expectedResult,
+       in buildTest testDescription mockInput expectedResult,
       let mockInput = "add-infinite-jest"
           expectedResult =
             Book
@@ -121,12 +118,11 @@ testAdd =
               (Set.singleton $ Author (Just "David Foster") "Wallace")
               Set.empty
           testDescription = "check no tags"
-       in runTest testDescription mockInput expectedResult
+       in buildTest testDescription mockInput expectedResult
     ]
   where
-    mockInputFolder = "mock-input/"
-    runTest :: TestName -> String -> Book -> TestTree
-    runTest testDescription mockInput expectedResult =
+    buildTest :: TestName -> String -> Book -> TestTree
+    buildTest testDescription mockInput expectedResult =
       let testResult = do
             mockIOHandle <- openFile (testDirectory <> "/" <> mockInputFolder <> mockInput) ReadMode
             discardHandle <- getNullHandle

@@ -2,8 +2,11 @@ module TestUtils where
 
 import qualified Data.Set as Set
 import DataBase
-import System.IO (Handle, IOMode (WriteMode), openFile)
+import System.IO (Handle, IOMode (WriteMode, ReadMode), openFile)
 import Test.Tasty.HUnit
+
+mockInputFolder :: FilePath
+mockInputFolder = "mock-input/"
 
 {- The test database consists of the following entries:
 Little Women - Louise May Alcott (american, english, novel, women)
@@ -67,12 +70,6 @@ testDB =
         tags = Set.fromList ["ishmael", "whale", "novel", "american", "english"]
       },
     Book
-      { fileName = "the-scarlett-letter_nathaniel-hawthorne.epub",
-        title = "The Scarlett Letter",
-        author = Set.singleton (Author {firstName = Just "Nathaniel", lastName = "Hawthorne"}),
-        tags = Set.fromList ["shame", "american", "novel", "english"]
-      },
-    Book
       { fileName = "the-last-of-the-mohicans_j-f-cooper.epub",
         title = "The Last of the Mohicans",
         author = Set.singleton (Author {firstName = Just "James Fenimore", lastName = "Cooper"}),
@@ -89,6 +86,18 @@ booksAllInList target books = all (`bookInList` books) target
 
 getNullHandle :: IO Handle
 getNullHandle = openFile "/dev/null" WriteMode -- For Unix-like systems
+
+getMockHandle :: FilePath -> IO Handle
+getMockHandle file = openFile (mockInputFolder <> file) ReadMode
+
+getBookByFileName :: [Book] -> FilePath -> Maybe Book
+getBookByFileName [] _ = Nothing
+getBookByFileName (b : bs) file = if fileName b == file then Just b else getBookByFileName bs file
+
+bookHasTags :: [Book] -> FilePath -> Set.Set Tag -> Bool
+bookHasTags books file tagsToCheck = case getBookByFileName books file of
+  Nothing -> False
+  (Just b) -> tagsToCheck `Set.isSubsetOf` tags b
 
 (@?>>=) :: (Eq a, Show a, HasCallStack) => IO a -> a -> Assertion
 ioX @?>>= y = do
