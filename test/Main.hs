@@ -9,7 +9,7 @@ import Test.Tasty.HUnit
 import TestUtils
 
 main :: IO ()
-main = defaultMain $ testGroup "Great American Novel Test Suite" [testFilter, testAdd]
+main = defaultMain $ testGroup "Great American Novel Test Suite" [testFilter, testAdd, testAddTag]
 
 testDirectory :: FilePath
 testDirectory = "./test-data"
@@ -129,3 +129,50 @@ testAdd =
             prepareNewEntry mockIOHandle discardHandle testDirectory (fileName expectedResult)
           testDescription' = "add " <> title expectedResult <> " (" <> testDescription <> ")"
        in testCase testDescription' $ testResult @?>>= expectedResult
+
+testAddTag :: TestTree
+testAddTag =
+  testGroup
+    "test `add tag' command"
+    [ let file = "blood-meridian_cormac-mccarthy.epub"
+          mockInput = "add-tag-blood-meridian"
+          testDescription = "add a single tag to Blood Meridian"
+          tagsAdded = ["violence"]
+       in buildTest testDescription mockInput file tagsAdded,
+      let file = "blood-meridian_cormac-mccarthy.epub"
+          mockInput = "add-multiple-tags-blood-meridian"
+          testDescription = "add multiple tags to Blood Meridian"
+          tagsAdded = ["judge-holden", "the-kid"]
+       in buildTest testDescription mockInput file tagsAdded,
+      let file = "blood-meridian_cormac-mccarthy.epub"
+          mockInput = "add-zero-tags-blood-meridian"
+          testDescription = "add zero tags to Blood Meridian"
+          originalTags = maybe Set.empty tags (getBookByFileName testDB file)
+       in testCase testDescription $
+            do
+              mockIOHandle <- getMockHandle mockInput
+              discardHandle <- getNullHandle
+              newDB <- runAddTags mockIOHandle discardHandle file testDB
+              originalTags @?= maybe Set.empty tags (getBookByFileName newDB file),
+      let file = "the-scarlett-letter_nathaniel-hawthorne.epub"
+          mockInput = "add-while-add-tag-the-scarlett-letter"
+          testDescription = "add nonexistent book The Scarlett Letter"
+          newEntry =
+            Book
+              "the-scarlett-letter_nathaniel-hawthorne.epub"
+              "The Scarlett Letter"
+              (Set.singleton $ Author (Just "Nathaniel") "Hawthorne")
+              (Set.fromList ["shame", "american", "novel", "english"])
+       in testCase testDescription $ do
+            mockIOHandle <- getMockHandle mockInput
+            discardHandle <- getNullHandle
+            newDB <- runAddTags mockIOHandle discardHandle file testDB
+            assertBool "failed to add entry" $ newEntry `elem` newDB
+    ]
+  where
+    buildTest testDescription mockInput file tagsAdded = testCase testDescription $
+      do
+        mockIOHandle <- getMockHandle mockInput
+        discardHandle <- getNullHandle
+        newDB <- runAddTags mockIOHandle discardHandle file testDB
+        assertBool ("failed to add new tags: " <> show tagsAdded) (bookHasTags newDB file $ Set.fromList tagsAdded)
