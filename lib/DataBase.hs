@@ -75,9 +75,9 @@ dataBaseNotFoundError :: a
 dataBaseNotFoundError = error $ "No database file found: " <> dataBaseFileName
 
 -- Check whether the database file is present in the current directory and is valid JSON.
-validateDBFile :: IO [Book]
-validateDBFile = do
-  isDBFilePresent <- isFileInWorkingDirectory dataBaseFileName
+validateDBFile :: FilePath -> IO [Book]
+validateDBFile directory  = do
+  isDBFilePresent <- isFileInDirectory directory dataBaseFileName
   if isDBFilePresent
     then fmap decodeDBFile dataBaseFile
     else dataBaseNotFoundError

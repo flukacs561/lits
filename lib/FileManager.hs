@@ -1,5 +1,5 @@
 module FileManager
-  ( isFileInWorkingDirectory,
+  ( isFileInDirectory,
     createDBFile,
     dataBaseFileName,
     dataBaseFile,
@@ -18,10 +18,10 @@ dataBaseFileName = "test-data.json"
 dataBaseFile :: IO BS.ByteString
 dataBaseFile = BS.readFile dataBaseFileName
 
-isFileInWorkingDirectory :: String -> IO Bool
-isFileInWorkingDirectory path = do
-  files <- getDirectoryContents "."
-  pure $ path `elem` files
+isFileInDirectory :: FilePath -> FilePath -> IO Bool
+isFileInDirectory directory file = do
+  files <- getDirectoryContents directory
+  return $ file `elem` files
 
 getBookFilesFromDirectory :: IO [String]
 getBookFilesFromDirectory = do
