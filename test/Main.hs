@@ -12,6 +12,9 @@ import TestUtils
 main :: IO ()
 main = defaultMain $ testGroup "Great American Novel Test Suite" [testFilter, testAdd]
 
+testDirectory :: FilePath
+testDirectory = "./test-data"
+
 testFilter :: TestTree
 testFilter = testGroup "test filtering functionality" [testParseFilterInput, testRunFilter]
 
@@ -125,8 +128,8 @@ testAdd =
     runTest :: TestName -> String -> Book -> TestTree
     runTest testDescription mockInput expectedResult =
       let testResult = do
-            mockIOHandle <- openFile (mockInputFolder <> mockInput) ReadMode
+            mockIOHandle <- openFile (testDirectory <> "/" <> mockInputFolder <> mockInput) ReadMode
             discardHandle <- getNullHandle
-            prepareNewEntry mockIOHandle discardHandle (fileName expectedResult)
+            prepareNewEntry mockIOHandle discardHandle testDirectory (fileName expectedResult)
           testDescription' = "add " <> title expectedResult <> " (" <> testDescription <> ")"
        in testCase testDescription' $ testResult @?>>= expectedResult

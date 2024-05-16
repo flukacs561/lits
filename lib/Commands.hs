@@ -42,15 +42,15 @@ doList _ = inputErrorTooMany
 doFilter :: [String] -> [Book] -> IO ()
 doFilter args db = printBooks $ runFilterCmd args db
 
-doAdd :: [String] -> [Book] -> IO ()
-doAdd [] _ = inputErrorNoFile
-doAdd [file] db =
+doAdd :: FilePath -> [String] -> [Book] -> IO ()
+doAdd _directory [] _db = inputErrorNoFile
+doAdd directory [file] db =
   if hasFileEntry file db
     then error "This file already has an entry in the database."
     else do
-      newBook <- prepareNewEntry stdin stdout file
+      newBook <- prepareNewEntry stdin stdout directory file
       writeToDataBase (newBook : db)
-doAdd _ _ = inputErrorTooMany
+doAdd _ _ _ = inputErrorTooMany
 
 hasFileEntry :: FilePath -> [Book] -> Bool
 hasFileEntry file = any (\book -> fileName book == file)

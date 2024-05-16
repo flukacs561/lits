@@ -24,9 +24,9 @@ inputErrorFileNotFound :: a
 inputErrorFileNotFound = error "No such file in current directory."
 
 -- The argument should contain exactly one string: the name of the file for which the entry is to be generated.
-prepareNewEntry :: Handle -> Handle -> String -> IO Book
-prepareNewEntry input output file = do
-  isFilePresent <- isFileInWorkingDirectory file
+prepareNewEntry :: Handle -> Handle -> FilePath -> String -> IO Book
+prepareNewEntry input output directory file = do
+  isFilePresent <- isFileInDirectory directory file
   if isFilePresent
     then do
       hPutStrLn output "Title: "
@@ -91,7 +91,7 @@ addUnsavedBookDialog input output (file : rest) = do
   hPutStrLn output $ "Do you want to create a database entry for " <> file <> "? [y/N/s/d/?]"
   wantToSave <- hGetLine input
   case wantToSave of
-    "y" -> monadCons (prepareNewEntry input output file) $ addUnsavedBookDialog input output rest
+    "y" -> monadCons (prepareNewEntry input output "." file) $ addUnsavedBookDialog input output rest
     "n" -> addUnsavedBookDialog input output rest
     "s" -> return []
     "d" -> do
@@ -157,7 +157,7 @@ runAddTags input output file [] = do
   hPutStrLn output "This file does not have a corresponding database entry. Do you wish to create one? [y/N]"
   wantToCreate <- hGetLine input
   if wantToCreate == "y"
-    then pure <$> prepareNewEntry input output file
+    then pure <$> prepareNewEntry input output "." file
     else return []
 runAddTags input output file (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) =
   if file == thisFileName
