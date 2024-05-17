@@ -3,7 +3,7 @@ module TestUtils where
 import qualified Data.Set as Set
 import DataBase
 import System.IO
-import System.Process ( createPipe )
+import System.Process (createPipe)
 import Test.Tasty.HUnit
 
 mockInputDirectory :: FilePath
@@ -111,6 +111,21 @@ prepareMockHandle cmds = do
   mapM_ (hPutStrLn writeHandle) cmds
   hClose writeHandle
   return readHandle
+
+convertBookToMockInstructions :: Book -> [String]
+convertBookToMockInstructions (Book _thisFileName thisTitle theseAuthors theseTags) =
+  [thisTitle]
+    <> authorInstructions (Set.toAscList theseAuthors)
+    <> Set.toAscList theseTags
+    <> [""]
+  where
+    authorInstructions :: [Author] -> [String]
+    authorInstructions [] = ["n"]
+    authorInstructions (a : as) = singleAuthorInstructions a <> authorInstructions as
+
+    singleAuthorInstructions :: Author -> [String]
+    singleAuthorInstructions (Author Nothing thisLastName) = ["", thisLastName]
+    singleAuthorInstructions (Author (Just thisFirstName) thisLastName) = [thisFirstName, thisLastName]
 
 safeGetTags :: [Book] -> FilePath -> Set.Set Tag
 safeGetTags db file = maybe Set.empty tags (getBookByFileName db file)
