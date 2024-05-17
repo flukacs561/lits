@@ -2,7 +2,8 @@ module TestUtils where
 
 import qualified Data.Set as Set
 import DataBase
-import System.IO (Handle, IOMode (WriteMode, ReadMode), openFile)
+import System.IO
+import System.Process ( createPipe )
 import Test.Tasty.HUnit
 
 mockInputFolder :: FilePath
@@ -103,3 +104,10 @@ bookHasTags books file tagsToCheck = case getBookByFileName books file of
 ioX @?>>= y = do
   x <- ioX
   x @?= y
+
+prepareMockHandle :: [String] -> IO Handle
+prepareMockHandle cmds = do
+  (readHandle, writeHandle) <- createPipe
+  mapM_ (hPutStrLn writeHandle) cmds
+  hClose writeHandle
+  return readHandle
