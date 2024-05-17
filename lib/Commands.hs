@@ -30,9 +30,9 @@ inputErrorNoFile = error "No file specified"
 invalidCommandError :: String -> String
 invalidCommandError cmd = "Invalid argument: \"" <> cmd <> "\" is not an actual command in LiTS."
 
-doInit :: [String] -> IO ()
-doInit [] = createDBFile
-doInit _ = inputErrorTooMany
+doInit :: FilePath -> [String] -> IO ()
+doInit workingDirectory [] = createDBFile workingDirectory
+doInit _ _ = inputErrorTooMany
 
 doList :: [String] -> [Book] -> IO ()
 doList [] = printBooks
@@ -49,45 +49,45 @@ doAdd directory [file] db =
     then error "This file already has an entry in the database."
     else do
       newBook <- prepareNewEntry stdin stdout directory file
-      writeToDataBase (newBook : db)
+      writeToDataBase directory (newBook : db)
 doAdd _ _ _ = inputErrorTooMany
 
 hasFileEntry :: FilePath -> [Book] -> Bool
 hasFileEntry file = any (\book -> fileName book == file)
 
-doDelete :: [String] -> [Book] -> IO ()
-doDelete [] _ = inputErrorNoFile
-doDelete [file] db = do
-  writeToDataBase $ removeEntry file db
+doDelete :: FilePath -> [String] -> [Book] -> IO ()
+doDelete _ [] _ = inputErrorNoFile
+doDelete directory [file] db = do
+  writeToDataBase directory $ removeEntry (directory <> "/" <> file) db
   removeFile file
-doDelete _ _ = inputErrorTooMany
+doDelete _ _ _ = inputErrorTooMany
 
-doImport :: [String] -> [Book] -> IO ()
-doImport [] db = do
-  newDB <- runImportCommand stdin stdout db
-  writeToDataBase newDB
-doImport _ _ = inputErrorTooMany
+doImport :: FilePath -> [String] -> [Book] -> IO ()
+doImport directory [] db = do
+  newDB <- runImportCommand stdin stdout directory db
+  writeToDataBase directory newDB
+doImport _ _ _ = inputErrorTooMany
 
-doRemoveDups :: [String] -> [Book] -> IO ()
-doRemoveDups [] = writeToDataBase . nub
-doRemoveDups _ = inputErrorTooMany
+doRemoveDups :: FilePath -> [String] -> [Book] -> IO ()
+doRemoveDups directory [] = writeToDataBase directory . nub
+doRemoveDups _ _ = inputErrorTooMany
 
-doClean :: [String] -> [Book] -> IO ()
-doClean [] db = do
-  newDB <- runCleanCommand stdin stdout db
-  writeToDataBase newDB
-doClean _ _ = inputErrorTooMany
+doClean :: FilePath -> [String] -> [Book] -> IO ()
+doClean directory [] db = do
+  newDB <- runCleanCommand stdin stdout directory db
+  writeToDataBase directory newDB
+doClean _ _ _ = inputErrorTooMany
 
-doAddTags :: [FilePath] -> [Book] -> IO ()
-doAddTags [] _ = inputErrorNoFile
-doAddTags [file] db = do
-  newDB <- runAddTags stdin stdout file db
-  writeToDataBase newDB
-doAddTags _ _ = inputErrorTooMany
+doAddTags :: FilePath -> [FilePath] -> [Book] -> IO ()
+doAddTags _ [] _ = inputErrorNoFile
+doAddTags directory [file] db = do
+  newDB <- runAddTags stdin stdout directory file db
+  writeToDataBase directory newDB
+doAddTags _ _ _ = inputErrorTooMany
 
-doRemoveTags :: [FilePath] -> [Book] -> IO ()
-doRemoveTags [] _ = inputErrorNoFile
-doRemoveTags [file] db = do
+doRemoveTags :: FilePath -> [FilePath] -> [Book] -> IO ()
+doRemoveTags _ [] _ = inputErrorNoFile
+doRemoveTags directory [file] db = do
   newDB <- runRemoveTags stdin stdout file db
-  writeToDataBase newDB
-doRemoveTags _ _ = inputErrorTooMany
+  writeToDataBase directory newDB
+doRemoveTags _ _ _ = inputErrorTooMany
