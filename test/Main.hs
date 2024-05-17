@@ -76,7 +76,17 @@ testAdd :: TestTree
 testAdd =
   testGroup
     "test `add' command"
-    [ let mockInput = "add-gravitys-rainbow"
+    [ let mockInput =
+            [ "Gravity's Rainbow",
+              "Thomas",
+              "Pynchon",
+              "",
+              "american",
+              "novel",
+              "english",
+              "satire",
+              ""
+            ]
           expectedResult =
             Book
               "gravitys-rainbow_thomas-pynchon.epub"
@@ -86,7 +96,18 @@ testAdd =
                 ["satire", "english", "novel", "american"]
           testDescription = "check all fields filled"
        in buildTest testDescription mockInput expectedResult,
-      let mockInput = "add-iliad"
+      let mockInput =
+            [ "Iliad",
+              "",
+              "Homer",
+              "",
+              "epic",
+              "ancient",
+              "greek",
+              "troy",
+              "",
+              ""
+            ]
           expectedResult =
             Book
               "iliad_homer.epub"
@@ -96,7 +117,20 @@ testAdd =
                 ["epic", "ancient", "greek", "troy"]
           testDescription = "check author no first name"
        in buildTest testDescription mockInput expectedResult,
-      let mockInput = "add-sicp"
+      let mockInput =
+            [ "Structure and Interpretation of Computer Programs",
+              "Harold",
+              "Abelson",
+              "y",
+              "Gerald Jay",
+              "Sussman",
+              "n",
+              "cs",
+              "wizzard",
+              "lisp",
+              "scheme",
+              ""
+            ]
           expectedResult =
             Book
               "sicp.pdf"
@@ -110,7 +144,13 @@ testAdd =
                 ["cs", "wizzard", "lisp", "scheme"]
           testDescription = "check multiple authors"
        in buildTest testDescription mockInput expectedResult,
-      let mockInput = "add-infinite-jest"
+      let mockInput =
+            [ "Infinite Jest",
+              "David Foster",
+              "Wallace",
+              "",
+              ""
+            ]
           expectedResult =
             Book
               "infinite-jest_david-foster-wallace.epub"
@@ -121,12 +161,12 @@ testAdd =
        in buildTest testDescription mockInput expectedResult
     ]
   where
-    buildTest :: TestName -> String -> Book -> TestTree
+    buildTest :: TestName -> [String] -> Book -> TestTree
     buildTest testDescription mockInput expectedResult =
       let testResult = do
-            mockIOHandle <- getMockHandle (testDirectory <> "/" <> mockInputDirectory <> mockInput)
+            mockInputHandle <- prepareMockHandle mockInput
             discardHandle <- getNullHandle
-            prepareNewEntry mockIOHandle discardHandle testDirectory (fileName expectedResult)
+            prepareNewEntry mockInputHandle discardHandle testDirectory (fileName expectedResult)
           testDescription' = "add " <> title expectedResult <> " (" <> testDescription <> ")"
        in testCase testDescription' $ testResult @?>>= expectedResult
 
@@ -135,27 +175,35 @@ testAddTag =
   testGroup
     "test `add tag' command"
     [ let file = "blood-meridian_cormac-mccarthy.epub"
-          mockInput = "add-tag-blood-meridian"
           testDescription = "add a single tag to Blood Meridian"
-          tagsAdded = ["violence"]
-       in buildTest testDescription mockInput file tagsAdded,
+          tagsToAdd = ["violence"]
+       in buildTest testDescription file tagsToAdd,
       let file = "blood-meridian_cormac-mccarthy.epub"
-          mockInput = "add-multiple-tags-blood-meridian"
           testDescription = "add multiple tags to Blood Meridian"
           tagsAdded = ["judge-holden", "the-kid"]
-       in buildTest testDescription mockInput file tagsAdded,
+       in buildTest testDescription file tagsAdded,
       let file = "blood-meridian_cormac-mccarthy.epub"
-          mockInput = "add-zero-tags-blood-meridian"
           testDescription = "add zero tags to Blood Meridian"
           originalTags = safeGetTags testDB file
        in testCase testDescription $
             do
-              mockIOHandle <- getMockHandle $ testDirectory <> mockInputDirectory <> mockInput
+              mockInputHandle <- prepareMockHandle $ buildInputFromTagsToAdd []
               discardHandle <- getNullHandle
-              newDB <- runAddTags mockIOHandle discardHandle testDirectory file testDB
+              newDB <- runAddTags mockInputHandle discardHandle testDirectory file testDB
               originalTags @?= safeGetTags newDB file,
       let file = "the-scarlett-letter_nathaniel-hawthorne.epub"
-          mockInput = "add-while-add-tag-the-scarlett-letter"
+          mockInput =
+            [ "y",
+              "The Scarlett Letter",
+              "Nathaniel",
+              "Hawthorne",
+              "",
+              "shame",
+              "american",
+              "novel",
+              "english",
+              ""
+            ]
           testDescription = "add nonexistent book The Scarlett Letter"
           newEntry =
             Book
@@ -164,18 +212,28 @@ testAddTag =
               (Set.singleton $ Author (Just "Nathaniel") "Hawthorne")
               (Set.fromList ["shame", "american", "novel", "english"])
        in testCase testDescription $ do
-            mockIOHandle <- getMockHandle $ testDirectory <> mockInputDirectory <> mockInput
+            mockInputHandle <- prepareMockHandle mockInput
             discardHandle <- getNullHandle
-            newDB <- runAddTags mockIOHandle discardHandle testDirectory file testDB
+            newDB <- runAddTags mockInputHandle discardHandle testDirectory file testDB
             assertBool "failed to add entry" $ newEntry `elem` newDB
     ]
   where
-    buildTest testDescription mockInput file tagsAdded = testCase testDescription $
+    buildInputFromTagsToAdd :: [Tag] -> [String]
+    buildInputFromTagsToAdd [] = [""]
+    buildInputFromTagsToAdd (t : ts) = t : buildInputFromTagsToAdd ts
+
+    buildTest :: TestName -> FilePath -> [Tag] -> TestTree
+    buildTest testDescription file tagsToAdd = testCase testDescription $
       do
-        mockIOHandle <- getMockHandle $ testDirectory <> mockInputDirectory <> mockInput
+        mockInputHandle <- prepareMockHandle $ buildInputFromTagsToAdd tagsToAdd
         discardHandle <- getNullHandle
-        newDB <- runAddTags mockIOHandle discardHandle testDirectory file testDB
-        assertBool ("failed to add new tags: " <> show tagsAdded) (bookHasTags newDB file $ Set.fromList tagsAdded)
+        newDB <- runAddTags mockInputHandle discardHandle testDirectory file testDB
+        let errorMsg =
+              unlines
+                [ "failed to add new tags: " <> show tagsToAdd,
+                  "current tags: " <> (show . Set.toAscList . safeGetTags newDB) file
+                ]
+          in assertBool errorMsg (bookHasTags newDB file $ Set.fromList tagsToAdd)
 
 testRemoveTag :: TestTree
 testRemoveTag =
@@ -203,13 +261,37 @@ testRemoveTag =
 
     buildTest :: TestName -> FilePath -> [Tag] -> TestTree
     buildTest testDescription file tagsToRemove = testCase testDescription $ do
-      mockIOHandle <- prepareMockHandle $ getInputFromTagsToRemove tagsToRemove (safeGetTags testDB file)
+      mockInputHandle <- prepareMockHandle $ getInputFromTagsToRemove tagsToRemove (safeGetTags testDB file)
       discardHandle <- getNullHandle
-      newDB <- runRemoveTags mockIOHandle discardHandle file testDB
+      newDB <- runRemoveTags mockInputHandle discardHandle file testDB
       let oldTags = safeGetTags testDB file
           newTags = safeGetTags newDB file
-          errorMsg = unlines ["failed to remove tags:" <> show tagsToRemove,
-                              "old tags:" <> show (Set.toAscList oldTags),
-                              "new tags:" <> show (Set.toAscList newTags)]
+          errorMsg =
+            unlines
+              [ "failed to remove tags:" <> show tagsToRemove,
+                "old tags:" <> show (Set.toAscList oldTags),
+                "new tags:" <> show (Set.toAscList newTags)
+              ]
        in assertBool errorMsg $ Set.difference oldTags (Set.fromList tagsToRemove) == newTags
 
+-- Errors should also be tested.
+
+{-
+Mit csinál az `import'?
+- Megnézi, hogy vannak-e az aktuális directory-ban olyan file-ok, amikhez nem tartozik adatbázisbejegyzés
+- Mindegyik ilyen file-lal kapcsolatban megkérdezi, hogy hozzá akarom-e adni az adatbázishoz
+- Ha igen, akkor létrehoz neki egy bejegyzést
+- Ha nem, akkor megy tovább a következő bejegyzésre
+- Ha s, akkor leáll és nem kérdezi meg a maradékot
+
+Milyen tesztek adódnak ebből?
+- Nincs adatbázisbejegyzés nélküli file
+- Több is van, az elsőt nem importálom, a másodikat igen, a maradékot nem.
+
+És akkor úgy tűnik, hogy ezen a ponton már szükség lesz arra, hogy egy megadott mappában futtassuk a függvényeket.
+-}
+testImport :: TestTree
+testImport = testGroup "test `import' command" []
+
+testClean :: TestTree
+testClean = testGroup "test `clean' command" []
