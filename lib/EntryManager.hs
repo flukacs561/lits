@@ -185,7 +185,8 @@ getTagsToRemove input output allTags = do
   case isValidInteger (length allTags) numberOfTag of
     EmptyInput -> return Set.empty
     ValidInput n ->
-      let tagToRemove = Set.toAscList allTags !! (n - 1)
+      -- note that indexing in a Set starts at 0, while the numbering of tags in LiTS starts from 1.
+      let tagToRemove = Set.elemAt (n - 1) allTags
        in Set.insert tagToRemove <$> getTagsToRemove input output (Set.delete tagToRemove allTags)
     InvalidInput -> do
       hPutStrLn output $ "Invalid input. Please enter an integer between 1 and " <> show (length allTags) <> "!"
