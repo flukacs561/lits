@@ -75,11 +75,11 @@ dataBaseNotFoundError :: a
 dataBaseNotFoundError = error $ "No database file found: " <> dataBaseFileName
 
 -- Check whether the database file is present in the current directory and is valid JSON.
-validateDBFile :: IO [Book]
-validateDBFile = do
-  isDBFilePresent <- isFileInWorkingDirectory dataBaseFileName
+validateDBFile :: FilePath -> IO [Book]
+validateDBFile directory  = do
+  isDBFilePresent <- isFileInDirectory directory dataBaseFileName
   if isDBFilePresent
-    then fmap decodeDBFile dataBaseFile
+    then decodeDBFile <$> dataBaseFile directory
     else dataBaseNotFoundError
   where
     decodeDBFile :: BS.ByteString -> [Book]
@@ -88,8 +88,8 @@ validateDBFile = do
       Nothing -> dataBaseReadError
       (Just dbContent) -> dbContent
 
-writeToDataBase :: [Book] -> IO ()
-writeToDataBase newDB = BL.writeFile dataBaseFileName $ encode newDB
+writeToDataBase :: FilePath -> [Book] -> IO ()
+writeToDataBase workingDirectory newDB = BL.writeFile (workingDirectory <> "/" <> dataBaseFileName) $ encode newDB
 
 -- writeToDataBase newDB = case fmap encode newDB of
 --   Nothing -> error "An error occured when writing "
