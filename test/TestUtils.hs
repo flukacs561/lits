@@ -6,8 +6,8 @@ import System.IO
 import System.Process ( createPipe )
 import Test.Tasty.HUnit
 
-mockInputFolder :: FilePath
-mockInputFolder = "mock-input/"
+mockInputDirectory :: FilePath
+mockInputDirectory = "mock-input/"
 
 {- The test database consists of the following entries:
 Little Women - Louise May Alcott (american, english, novel, women)
@@ -89,7 +89,7 @@ getNullHandle :: IO Handle
 getNullHandle = openFile "/dev/null" WriteMode -- For Unix-like systems
 
 getMockHandle :: FilePath -> IO Handle
-getMockHandle file = openFile (mockInputFolder <> file) ReadMode
+getMockHandle file = openFile file ReadMode
 
 getBookByFileName :: [Book] -> FilePath -> Maybe Book
 getBookByFileName [] _ = Nothing

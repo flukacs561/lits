@@ -12,7 +12,7 @@ main :: IO ()
 main = defaultMain $ testGroup "Great American Novel Test Suite" [testFilter, testAdd, testAddTag, testRemoveTag]
 
 testDirectory :: FilePath
-testDirectory = "./test-data"
+testDirectory = "./test-data/"
 
 testFilter :: TestTree
 testFilter = testGroup "test filtering functionality" [testParseFilterInput, testRunFilter]
@@ -124,7 +124,7 @@ testAdd =
     buildTest :: TestName -> String -> Book -> TestTree
     buildTest testDescription mockInput expectedResult =
       let testResult = do
-            mockIOHandle <- openFile (testDirectory <> "/" <> mockInputFolder <> mockInput) ReadMode
+            mockIOHandle <- getMockHandle (testDirectory <> "/" <> mockInputDirectory <> mockInput)
             discardHandle <- getNullHandle
             prepareNewEntry mockIOHandle discardHandle testDirectory (fileName expectedResult)
           testDescription' = "add " <> title expectedResult <> " (" <> testDescription <> ")"
@@ -150,9 +150,9 @@ testAddTag =
           originalTags = safeGetTags testDB file
        in testCase testDescription $
             do
-              mockIOHandle <- getMockHandle mockInput
+              mockIOHandle <- getMockHandle $ testDirectory <> mockInputDirectory <> mockInput
               discardHandle <- getNullHandle
-              newDB <- runAddTags mockIOHandle discardHandle file testDB
+              newDB <- runAddTags mockIOHandle discardHandle testDirectory file testDB
               originalTags @?= safeGetTags newDB file,
       let file = "the-scarlett-letter_nathaniel-hawthorne.epub"
           mockInput = "add-while-add-tag-the-scarlett-letter"
@@ -164,17 +164,17 @@ testAddTag =
               (Set.singleton $ Author (Just "Nathaniel") "Hawthorne")
               (Set.fromList ["shame", "american", "novel", "english"])
        in testCase testDescription $ do
-            mockIOHandle <- getMockHandle mockInput
+            mockIOHandle <- getMockHandle $ testDirectory <> mockInputDirectory <> mockInput
             discardHandle <- getNullHandle
-            newDB <- runAddTags mockIOHandle discardHandle file testDB
+            newDB <- runAddTags mockIOHandle discardHandle testDirectory file testDB
             assertBool "failed to add entry" $ newEntry `elem` newDB
     ]
   where
     buildTest testDescription mockInput file tagsAdded = testCase testDescription $
       do
-        mockIOHandle <- getMockHandle mockInput
+        mockIOHandle <- getMockHandle $ testDirectory <> mockInputDirectory <> mockInput
         discardHandle <- getNullHandle
-        newDB <- runAddTags mockIOHandle discardHandle file testDB
+        newDB <- runAddTags mockIOHandle discardHandle testDirectory file testDB
         assertBool ("failed to add new tags: " <> show tagsAdded) (bookHasTags newDB file $ Set.fromList tagsAdded)
 
 testRemoveTag :: TestTree
