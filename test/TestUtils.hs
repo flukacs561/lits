@@ -111,3 +111,6 @@ prepareMockHandle cmds = do
   mapM_ (hPutStrLn writeHandle) cmds
   hClose writeHandle
   return readHandle
+
+safeGetTags :: [Book] -> FilePath -> Set.Set Tag
+safeGetTags db file = maybe Set.empty tags (getBookByFileName db file)

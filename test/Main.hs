@@ -147,13 +147,13 @@ testAddTag =
       let file = "blood-meridian_cormac-mccarthy.epub"
           mockInput = "add-zero-tags-blood-meridian"
           testDescription = "add zero tags to Blood Meridian"
-          originalTags = maybe Set.empty tags (getBookByFileName testDB file)
+          originalTags = safeGetTags testDB file
        in testCase testDescription $
             do
               mockIOHandle <- getMockHandle mockInput
               discardHandle <- getNullHandle
               newDB <- runAddTags mockIOHandle discardHandle file testDB
-              originalTags @?= maybe Set.empty tags (getBookByFileName newDB file),
+              originalTags @?= safeGetTags newDB file,
       let file = "the-scarlett-letter_nathaniel-hawthorne.epub"
           mockInput = "add-while-add-tag-the-scarlett-letter"
           testDescription = "add nonexistent book The Scarlett Letter"
@@ -203,11 +203,11 @@ testRemoveTag =
 
     buildTest :: TestName -> FilePath -> [Tag] -> TestTree
     buildTest testDescription file tagsToRemove = testCase testDescription $ do
-      mockIOHandle <- prepareMockHandle $ getInputFromTagsToRemove tagsToRemove (maybe Set.empty tags $ getBookByFileName testDB file)
+      mockIOHandle <- prepareMockHandle $ getInputFromTagsToRemove tagsToRemove (safeGetTags testDB file)
       discardHandle <- getNullHandle
       newDB <- runRemoveTags mockIOHandle discardHandle file testDB
-      let oldTags = maybe Set.empty tags (getBookByFileName testDB file)
-          newTags = maybe Set.empty tags (getBookByFileName newDB file)
+      let oldTags = safeGetTags testDB file
+          newTags = safeGetTags newDB file
           errorMsg = unlines ["failed to remove tags:" <> show tagsToRemove,
                               "old tags:" <> show (Set.toAscList oldTags),
                               "new tags:" <> show (Set.toAscList newTags)]
