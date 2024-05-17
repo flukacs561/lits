@@ -15,20 +15,20 @@ import System.FilePath
 dataBaseFileName :: FilePath
 dataBaseFileName = "test-data.json"
 
-dataBaseFile :: IO BS.ByteString
-dataBaseFile = BS.readFile dataBaseFileName
+dataBaseFile :: FilePath -> IO BS.ByteString
+dataBaseFile workingDirectory = BS.readFile $ workingDirectory <> "/" <> dataBaseFileName
 
 isFileInDirectory :: FilePath -> FilePath -> IO Bool
 isFileInDirectory directory file = do
   files <- getDirectoryContents directory
-  return $ file `elem` files
+  return $ takeFileName file `elem` files
 
-getBookFilesFromDirectory :: IO [String]
-getBookFilesFromDirectory = do
-  files <- getDirectoryContents "."
+getBookFilesFromDirectory :: FilePath -> IO [String]
+getBookFilesFromDirectory directory = do
+  files <- getDirectoryContents directory
   pure $ filter (\file -> takeExtension file `elem` bookExtensions) files
   where
     bookExtensions = [".pdf", ".epub", ".mobi", ".djvi", ".dvi", ".ps"]
 
-createDBFile :: IO ()
-createDBFile = writeFile dataBaseFileName ""
+createDBFile :: FilePath -> IO ()
+createDBFile workingDirectory = writeFile (workingDirectory <> "/" <> dataBaseFileName) ""
