@@ -9,7 +9,7 @@ import Test.Tasty.HUnit
 import TestUtils
 
 main :: IO ()
-main = defaultMain $ testGroup "Great American Novel Test Suite" [testFilter, testAdd, testAddTag]
+main = defaultMain $ testGroup "Great American Novel Test Suite" [testFilter, testAdd, testAddTag, testRemoveTag]
 
 testDirectory :: FilePath
 testDirectory = "./test-data"
@@ -176,3 +176,40 @@ testAddTag =
         discardHandle <- getNullHandle
         newDB <- runAddTags mockIOHandle discardHandle file testDB
         assertBool ("failed to add new tags: " <> show tagsAdded) (bookHasTags newDB file $ Set.fromList tagsAdded)
+
+testRemoveTag :: TestTree
+testRemoveTag =
+  testGroup
+    "test `remove-tag' command"
+    [ let testDescription = "remove single tag from Uncle Tom's Cabin"
+          file = "uncle-toms-cabin_harriet-beecher-stowe.epub"
+          tagsToRemove = ["slaves"]
+       in buildTest testDescription file tagsToRemove,
+      let testDescription = "remove multiple tags from Uncle Tom's Cabin"
+          file = "uncle-toms-cabin_harriet-beecher-stowe.epub"
+          tagsToRemove = ["blacks", "novel"]
+       in buildTest testDescription file tagsToRemove,
+      let testDescription = "remove zero tags from Uncle Tom's Cabin"
+          file = "uncle-toms-cabin_harriet-beecher-stowe.epub"
+          tagsToRemove = []
+       in buildTest testDescription file tagsToRemove
+    ]
+  where
+    getInputFromTagsToRemove :: [Tag] -> Set.Set Tag -> [String]
+    getInputFromTagsToRemove [] _ = [""]
+    getInputFromTagsToRemove (t : ts) remainingTags =
+      -- note that indexing in a Set starts at 0, while the numbering of tags in LiTS starts from 1.
+      show (Set.findIndex t remainingTags + 1) : getInputFromTagsToRemove ts (Set.delete t remainingTags)
+
+    buildTest :: TestName -> FilePath -> [Tag] -> TestTree
+    buildTest testDescription file tagsToRemove = testCase testDescription $ do
+      mockIOHandle <- prepareMockHandle $ getInputFromTagsToRemove tagsToRemove (maybe Set.empty tags $ getBookByFileName testDB file)
+      discardHandle <- getNullHandle
+      newDB <- runRemoveTags mockIOHandle discardHandle file testDB
+      let oldTags = maybe Set.empty tags (getBookByFileName testDB file)
+          newTags = maybe Set.empty tags (getBookByFileName newDB file)
+          errorMsg = unlines ["failed to remove tags:" <> show tagsToRemove,
+                              "old tags:" <> show (Set.toAscList oldTags),
+                              "new tags:" <> show (Set.toAscList newTags)]
+       in assertBool errorMsg $ Set.difference oldTags (Set.fromList tagsToRemove) == newTags
+
