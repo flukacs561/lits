@@ -58,8 +58,9 @@ testRunFilter =
           targetBook = "the-last-of-the-mohicans_j-f-cooper.epub"
        in testCase testDescription $ bookInList targetBook (runFilter testFilterO testDB) @?= False,
       let testDescription = "multiple hits"
-          testFilterO = Just $ FilterO Nothing Nothing ["english", "novel"]
-       in testCase testDescription $ runFilter testFilterO testDB @?= testDB,
+          testFilterO = Just $ FilterO Nothing Nothing ["english"]
+       in testCase testDescription $
+            runFilter testFilterO testDB @?= (testDB `except` "iliad_homer.epub"),
       let testDescription = "match author first and last name"
           testFilterO = Just $ FilterO Nothing (Just "H") ["novel", "american"]
           targetBooks =
@@ -233,7 +234,7 @@ testAddTag =
                 [ "failed to add new tags: " <> show tagsToAdd,
                   "current tags: " <> (show . Set.toAscList . safeGetTags newDB) file
                 ]
-          in assertBool errorMsg (bookHasTags newDB file $ Set.fromList tagsToAdd)
+         in assertBool errorMsg (bookHasTags newDB file $ Set.fromList tagsToAdd)
 
 testRemoveTag :: TestTree
 testRemoveTag =

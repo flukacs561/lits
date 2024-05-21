@@ -1,5 +1,6 @@
 module TestUtils where
 
+import Data.List (delete)
 import qualified Data.Set as Set
 import DataBase
 import System.IO
@@ -41,18 +42,6 @@ testDB =
         tags = Set.fromList ["gothic", "southern", "novel", "english", "american"]
       },
     Book
-      { fileName = "the-great-gatsby_f-scott-fitzgerald.epub",
-        title = "The Great Gatsby",
-        author = Set.singleton (Author {firstName = Just "F. Scott", lastName = "Fitzgerald"}),
-        tags = Set.fromList ["americandream", "novel", "english", "american"]
-      },
-    Book
-      { fileName = "adventures-of-huckleberry-finn_mark-twain.epub",
-        title = "Adventures of Huckleberry Finn",
-        author = Set.singleton (Author {firstName = Just "Mark", lastName = "Twain"}),
-        tags = Set.fromList ["adventure", "english", "novel", "american"]
-      },
-    Book
       { fileName = "little-women_louisa-may-alcott.epub",
         title = "Little Women",
         author = Set.singleton (Author {firstName = Just "Louise May", lastName = "Alcott"}),
@@ -75,6 +64,22 @@ testDB =
         title = "The Last of the Mohicans",
         author = Set.singleton (Author {firstName = Just "James Fenimore", lastName = "Cooper"}),
         tags = Set.fromList ["novel", "american", "english", "indian"]
+      },
+    Book
+      { fileName = "iliad_homer.epub",
+        title = "Iliad",
+        author = Set.singleton (Author {firstName = Nothing, lastName = "Homer"}),
+        tags = Set.fromList ["epic", "ancient", "greek"]
+      },
+    Book
+      { fileName = "sicp.pdf",
+        title = "Structure and Interpretation of Computer Programs",
+        author =
+          Set.fromList
+            [ Author {firstName = Just "Harold", lastName = "Abelson"},
+              Author {firstName = Just "Gerald Jay", lastName = "Sussman"}
+            ],
+        tags = Set.fromList ["cs", "wizzard", "lisp", "scheme", "english"]
       }
   ]
 
@@ -129,3 +134,6 @@ convertBookToMockInstructions (Book _thisFileName thisTitle theseAuthors theseTa
 
 safeGetTags :: [Book] -> FilePath -> Set.Set Tag
 safeGetTags db file = maybe Set.empty tags (getBookByFileName db file)
+
+except :: [Book] -> FilePath -> [Book]
+except db file = maybe db (`delete` db) (getBookByFileName db file)

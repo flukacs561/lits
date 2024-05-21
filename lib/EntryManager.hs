@@ -20,7 +20,7 @@ import Formatting (printMetaData)
 import System.FilePath (takeFileName)
 import System.IO (Handle, hGetLine, hPutStrLn)
 import Text.Read (readMaybe)
-import Utilities ((|||), monadCons)
+import Utilities (monadCons, (|||))
 
 inputErrorFileNotFound :: a
 inputErrorFileNotFound = error "No such file in current directory."
