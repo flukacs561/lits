@@ -75,7 +75,7 @@ getTags input output = run Set.empty
         EmptyTag -> return tagList
 
 removeEntry :: FilePath -> [Book] -> [Book]
-removeEntry file = filter (\book -> fileName book /= file)
+removeEntry file = filter (\book -> fileName book /= takeFileName file)
 
 runImportCommand :: Handle -> Handle -> FilePath -> [Book] -> IO [Book]
 runImportCommand input output directory db = do
