@@ -1,4 +1,4 @@
-module Commands
+module LiTS.Commands
   ( invalidCommandError,
     doList,
     doFilter,
@@ -14,12 +14,12 @@ module Commands
 where
 
 import Data.List (nub)
-import DataBase (Book, fileName, writeToDataBase)
-import EntryManager (prepareNewEntry, removeEntry, runAddTags, runCleanCommand, runImportCommand, runRemoveTags)
-import FileManager (createDBFile, removeFile)
-import Filter (runFilterCmd)
-import Formatting (printBooks)
 import GHC.IO.StdHandles (stdin, stdout)
+import LiTS.DataBase (Book, fileName, writeToDataBase)
+import LiTS.EntryManager (prepareNewEntry, removeEntry, runAddTags, runCleanCommand, runImportCommand, runRemoveTags)
+import LiTS.FileManager (createDBFile, removeFile)
+import LiTS.Filter (runFilterCmd)
+import LiTS.Formatting (printBooks)
 
 inputErrorTooMany :: a
 inputErrorTooMany = error "Too many arguments"

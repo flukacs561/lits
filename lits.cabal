@@ -17,13 +17,13 @@ common warnings
 
 library
     import:           warnings
-    exposed-modules:  Commands
-                    , DataBase
-                    , EntryManager
-                    , FileManager
-                    , Utilities
-                    , Formatting
-                    , Filter
+    exposed-modules:  LiTS.Commands
+                    , LiTS.DataBase
+                    , LiTS.EntryManager
+                    , LiTS.FileManager
+                    , LiTS.Utilities
+                    , LiTS.Formatting
+                    , LiTS.Filter
     -- other-modules:
     -- other-extensions:
     build-depends:    base ^>=4.17.2.1

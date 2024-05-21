@@ -2,7 +2,7 @@ module TestUtils where
 
 import Data.List (delete)
 import qualified Data.Set as Set
-import DataBase
+import LiTS.DataBase
 import System.IO
 import System.Process (createPipe)
 import Test.Tasty.HUnit

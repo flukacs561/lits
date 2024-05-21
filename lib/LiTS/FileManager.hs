@@ -1,4 +1,4 @@
-module FileManager
+module LiTS.FileManager
   ( isFileInDirectory,
     createDBFile,
     dataBaseFileName,

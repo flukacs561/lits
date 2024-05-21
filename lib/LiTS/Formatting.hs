@@ -1,4 +1,4 @@
-module Formatting
+module LiTS.Formatting
   ( printBooks,
     printMetaData,
   )
@@ -6,7 +6,7 @@ where
 
 import Data.List (sortOn)
 import Data.Set
-import DataBase
+import LiTS.DataBase
 
 printBooks :: [Book] -> IO ()
 printBooks books = putStrLn $ unlines (printMetaData <$> sortOn author books)

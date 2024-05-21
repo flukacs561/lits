@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module DataBase where
+module LiTS.DataBase where
 
 import Data.Aeson
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Set as Set
-import FileManager
+import LiTS.FileManager
 
 type Tag = String
 
@@ -76,7 +76,7 @@ dataBaseNotFoundError = error $ "No database file found: " <> dataBaseFileName
 
 -- Check whether the database file is present in the current directory and is valid JSON.
 validateDBFile :: FilePath -> IO [Book]
-validateDBFile directory  = do
+validateDBFile directory = do
   isDBFilePresent <- isFileInDirectory directory dataBaseFileName
   if isDBFilePresent
     then decodeDBFile <$> dataBaseFile directory
