@@ -58,7 +58,7 @@ hasFileEntry file = any (\book -> fileName book == file)
 doDelete :: FilePath -> [String] -> [Book] -> IO ()
 doDelete _ [] _ = inputErrorNoFile
 doDelete directory [file] db = do
-  writeToDataBase directory $ removeEntry (directory <> "/" <> file) db
+  writeToDataBase directory $ removeEntry file db
   removeFile file
 doDelete _ _ _ = inputErrorTooMany
 
