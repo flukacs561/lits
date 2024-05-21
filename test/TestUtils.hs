@@ -1,11 +1,30 @@
-module TestUtils where
+module TestUtils
+  ( testDB,
+    bookInList,
+    booksAllInList,
+    getNullHandle,
+    getBookByFileName,
+    bookHasTags,
+    (@?>>=),
+    prepareMockHandle,
+    convertBookToMockInstructions,
+    safeGetTags,
+    except,
+  )
+where
 
 import Data.List (delete)
 import qualified Data.Set as Set
-import LiTS.DataBase
+import LiTS.DataBase (Author (..), Book (..), Tag)
 import System.IO
+  ( Handle,
+    IOMode (WriteMode),
+    hClose,
+    hPutStrLn,
+    openFile,
+  )
 import System.Process (createPipe)
-import Test.Tasty.HUnit
+import Test.Tasty.HUnit (Assertion, HasCallStack, (@?=))
 
 {- The test database consists of the following entries:
 Little Women - Louise May Alcott (american, english, novel, women)
@@ -89,9 +108,6 @@ booksAllInList target books = all (`bookInList` books) target
 
 getNullHandle :: IO Handle
 getNullHandle = openFile "/dev/null" WriteMode -- For Unix-like systems
-
-getMockHandle :: FilePath -> IO Handle
-getMockHandle file = openFile file ReadMode
 
 getBookByFileName :: [Book] -> FilePath -> Maybe Book
 getBookByFileName [] _ = Nothing

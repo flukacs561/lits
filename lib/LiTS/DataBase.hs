@@ -1,12 +1,30 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module LiTS.DataBase where
+module LiTS.DataBase
+  ( Tag,
+    Title,
+    Author(..),
+    Book(..),
+    validateDBFile,
+    writeToDataBase
+  )
+where
 
 import Data.Aeson
+    ( decodeStrict,
+      encode,
+      (.:),
+      (.:?),
+      object,
+      FromJSON(parseJSON),
+      Value(Object),
+      KeyValue((.=)),
+      ToJSON(toJSON) )
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Set as Set
 import LiTS.FileManager
+    ( dataBaseFileName, dataBaseFile, isFileInDirectory )
 
 type Tag = String
 
@@ -68,9 +86,6 @@ instance ToJSON Book where
 dataBaseReadError :: a
 dataBaseReadError = error "An error occured when reading the database. Its JSON structure might be compromised."
 
-dataBaseWriteError :: String -> a
-dataBaseWriteError newDB = error $ "An error occured when writing the database." <> show newDB
-
 dataBaseNotFoundError :: a
 dataBaseNotFoundError = error $ "No database file found: " <> dataBaseFileName
 
@@ -90,7 +105,3 @@ validateDBFile directory = do
 
 writeToDataBase :: FilePath -> [Book] -> IO ()
 writeToDataBase workingDirectory newDB = BL.writeFile (workingDirectory <> "/" <> dataBaseFileName) $ encode newDB
-
--- writeToDataBase newDB = case fmap encode newDB of
---   Nothing -> error "An error occured when writing "
---   (Just newJSON) -> B.writeFile dataBaseFileName newJSON

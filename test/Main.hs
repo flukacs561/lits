@@ -1,4 +1,4 @@
-module Main where
+module Main (main) where
 
 import Control.Exception (catch, throwIO)
 import Control.Monad (forM_)
@@ -6,7 +6,15 @@ import Data.List (delete, isSubsequenceOf, (\\))
 import qualified Data.Set as Set
 import GHC.IO.Exception (ExitCode)
 import LiTS.DataBase
+    ( Book(Book, fileName, title), Author(Author), Tag )
 import LiTS.EntryManager
+    ( prepareNewEntry,
+      runImportCommand,
+      importHelpString,
+      runCleanCommand,
+      cleanHelpString,
+      runAddTags,
+      runRemoveTags )
 import LiTS.Filter
 import System.Directory
   ( createDirectory,
@@ -36,7 +44,7 @@ main =
         defaultMain
           ( testGroup
               "Great American Novel Test Suite"
-              [testFilter, testAdd, testAddTag, testRemoveTag]
+              [testFilter, testAdd, testAddTag, testRemoveTag, testImport, testClean]
           )
           `catch` doCleanup
 

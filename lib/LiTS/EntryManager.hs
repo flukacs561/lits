@@ -7,15 +7,16 @@ module LiTS.EntryManager
     runCleanCommand,
     cleanHelpString,
     runAddTags,
-    runRemoveTags,
+    runRemoveTags
   )
 where
 
 import Data.Char (isAlphaNum)
 import Data.List ((\\))
 import qualified Data.Set as Set
-import LiTS.DataBase
+import LiTS.DataBase ( Book(Book, fileName), Author(Author), Tag )
 import LiTS.FileManager
+    ( removeFile, isFileInDirectory, getBookFilesFromDirectory )
 import LiTS.Formatting (printMetaData)
 import LiTS.Utilities (monadCons, (|||))
 import System.FilePath (takeFileName)

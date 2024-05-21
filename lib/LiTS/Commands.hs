@@ -9,7 +9,7 @@ module LiTS.Commands
     doRemoveDups,
     doClean,
     doAddTags,
-    doRemoveTags,
+    doRemoveTags
   )
 where
 
