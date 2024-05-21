@@ -1,4 +1,4 @@
-module EntryManager
+module LiTS.EntryManager
   ( prepareNewEntry,
     removeEntry,
     addUnsavedBookDialog,
@@ -14,13 +14,13 @@ where
 import Data.Char (isAlphaNum)
 import Data.List ((\\))
 import qualified Data.Set as Set
-import DataBase
-import FileManager
-import Formatting (printMetaData)
+import LiTS.DataBase
+import LiTS.FileManager
+import LiTS.Formatting (printMetaData)
+import LiTS.Utilities (monadCons, (|||))
 import System.FilePath (takeFileName)
 import System.IO (Handle, hGetLine, hPutStrLn)
 import Text.Read (readMaybe)
-import Utilities (monadCons, (|||))
 
 inputErrorFileNotFound :: a
 inputErrorFileNotFound = error "No such file in current directory."

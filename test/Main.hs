@@ -4,10 +4,10 @@ import Control.Exception (catch, throwIO)
 import Control.Monad (forM_)
 import Data.List (delete, isSubsequenceOf, (\\))
 import qualified Data.Set as Set
-import DataBase
-import EntryManager
-import Filter
 import GHC.IO.Exception (ExitCode)
+import LiTS.DataBase
+import LiTS.EntryManager
+import LiTS.Filter
 import System.Directory
   ( createDirectory,
     removeDirectoryRecursive,

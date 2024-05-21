@@ -1,9 +1,9 @@
-module Filter where
+module LiTS.Filter where
 
 import Data.Char (toLower)
 import qualified Data.Set as Set
-import DataBase
-import Utilities
+import LiTS.DataBase
+import LiTS.Utilities
 
 data FilterO = FilterO
   { titleF :: Maybe String,
@@ -82,4 +82,3 @@ parseFilterInput input = run input $ Just (FilterO Nothing Nothing [])
       [] -> Nothing
       tagsM' -> run (dropWhile (\str -> head str /= '-') strs) $ Just (FilterO titleM authorM tagsM')
     run _ _ = Nothing
-
