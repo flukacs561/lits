@@ -2,6 +2,7 @@ module Main where
 
 import Control.Exception (catch, throwIO)
 import Control.Monad (forM_)
+import Data.List (delete, isSubsequenceOf, (\\))
 import qualified Data.Set as Set
 import DataBase
 import EntryManager
@@ -11,6 +12,8 @@ import System.Directory
   ( createDirectory,
     removeDirectoryRecursive,
   )
+import System.IO (hClose, hGetContents)
+import System.Process (createPipe)
 import Test.Tasty
 import Test.Tasty.HUnit
 import TestUtils
@@ -313,24 +316,40 @@ testRemoveTag =
               ]
        in assertBool errorMsg $ Set.difference oldTags (Set.fromList tagsToRemove) == newTags
 
--- Errors should also be tested.
-
-{-
-Mit csinál az `import'?
-- Megnézi, hogy vannak-e az aktuális directory-ban olyan file-ok, amikhez nem tartozik adatbázisbejegyzés
-- Mindegyik ilyen file-lal kapcsolatban megkérdezi, hogy hozzá akarom-e adni az adatbázishoz
-- Ha igen, akkor létrehoz neki egy bejegyzést
-- Ha nem, akkor megy tovább a következő bejegyzésre
-- Ha s, akkor leáll és nem kérdezi meg a maradékot
-
-Milyen tesztek adódnak ebből?
-- Nincs adatbázisbejegyzés nélküli file
-- Több is van, az elsőt nem importálom, a másodikat igen, a maradékot nem.
-
-És akkor úgy tűnik, hogy ezen a ponton már szükség lesz arra, hogy egy megadott mappában futtassuk a függvényeket.
--}
 testImport :: TestTree
-testImport = testGroup "test `import' command" []
+testImport =
+  testGroup
+    "test `import' command"
+    [ let testDescription = "stop import immediately"
+          mockInput = ["s"]
+       in testCase testDescription $ do
+            mockInputHandle <- prepareMockHandle mockInput
+            discardHandle <- getNullHandle
+            newDB <- runImportCommand mockInputHandle discardHandle testDirectory testDB
+            newDB @?= testDB,
+      let testDescription = "import first, but not second, unsaved book"
+          huckleberryFinn =
+            Book
+              "adventures-of-huckleberry-finn_mark-twain.epub"
+              "Adventures of Huckleberry Finn"
+              (Set.singleton $ Author (Just "Mark") "Twain")
+              $ Set.fromList ["adventure", "english", "novel", "american"]
+          mockInput = convertBookToMockInstructions huckleberryFinn <> ["n"]
+       in testCase testDescription $ do
+            mockInputHandle <- prepareMockHandle mockInput
+            discardHandle <- getNullHandle
+            newDB <- runImportCommand mockInputHandle discardHandle testDirectory testDB
+            newDB @?= huckleberryFinn `delete` testDB,
+      let testDescription = "display help then abort, nothing is imported"
+          mockInput = ["?", "s"]
+       in testCase testDescription $ do
+            mockInputHandle <- prepareMockHandle mockInput
+            (mockOutputReadHandle, mockOutputWriteHandle) <- createPipe
+            newDB <- runImportCommand mockInputHandle mockOutputWriteHandle testDirectory testDB
+            hClose mockOutputWriteHandle
+            outputs <- hGetContents mockOutputReadHandle
+            assertBool "help not displayed" $ importHelpString `isSubsequenceOf` outputs && newDB == testDB
+    ]
 
 testClean :: TestTree
 testClean = testGroup "test `clean' command" []
