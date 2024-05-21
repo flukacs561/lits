@@ -1,6 +1,7 @@
 module LiTS.Filter where
 
 import Data.Char (toLower)
+import Data.List (isInfixOf)
 import qualified Data.Set as Set
 import LiTS.DataBase
 import LiTS.Utilities
@@ -52,19 +53,14 @@ runFilterTitle = filterField title textMatcher
 
 -- This function specifies the algorithm that decides whether a piece of string matches any of the fields.
 textMatcher :: String -> String -> Bool
-textMatcher = isPrefixOf
-
-isPrefixOf :: String -> String -> Bool
-isPrefixOf [] _ = True
-isPrefixOf (_ : _) [] = False
-isPrefixOf (m : ms) (s : ss) = (toLower m == toLower s) && isPrefixOf ms ss
+textMatcher s1 s2 = isInfixOf (fmap toLower s1) (fmap toLower s2)
 
 {- Parses a list of strings into a FilterO structure, which is then used to perform the actual filtering.
 The expected structure of the input is bash-like with the following flags:
  * "-T": title
  * "-a": author
  * "-t": tags
-Zero or more of these flags may be provided. Each of them may be followed by one or more alphanumeric strings.
+Zero or more of these flags may be provided.
 Example:
 lits filter -a hartsho -T alg -t maths ag -}
 parseFilterInput :: [String] -> Maybe FilterO
