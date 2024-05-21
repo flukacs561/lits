@@ -3,7 +3,9 @@ module EntryManager
     removeEntry,
     addUnsavedBookDialog,
     runImportCommand,
+    importHelpString,
     runCleanCommand,
+    cleanHelpString,
     runAddTags,
     runRemoveTags,
   )
@@ -18,15 +20,15 @@ import Formatting (printMetaData)
 import System.FilePath (takeFileName)
 import System.IO (Handle, hGetLine, hPutStrLn)
 import Text.Read (readMaybe)
-import Utilities ((|||), monadCons)
+import Utilities (monadCons, (|||))
 
 inputErrorFileNotFound :: a
 inputErrorFileNotFound = error "No such file in current directory."
 
 -- The argument should contain exactly one string: the name of the file for which the entry is to be generated.
-prepareNewEntry :: Handle -> Handle -> String -> IO Book
-prepareNewEntry input output file = do
-  isFilePresent <- isFileInWorkingDirectory file
+prepareNewEntry :: Handle -> Handle -> FilePath -> String -> IO Book
+prepareNewEntry input output directory file = do
+  isFilePresent <- isFileInDirectory directory file
   if isFilePresent
     then do
       hPutStrLn output "Title: "
@@ -75,39 +77,42 @@ getTags input output = run Set.empty
         EmptyTag -> return tagList
 
 removeEntry :: FilePath -> [Book] -> [Book]
-removeEntry file = filter (\book -> fileName book /= file)
+removeEntry file = filter (\book -> fileName book /= takeFileName file)
 
-runImportCommand :: Handle -> Handle -> [Book] -> IO [Book]
-runImportCommand input output db = do
-  booksInDirectory <- getBookFilesFromDirectory
-  booksToAdd <- addUnsavedBookDialog input output $ getUnsavedBooks booksInDirectory db
+runImportCommand :: Handle -> Handle -> FilePath -> [Book] -> IO [Book]
+runImportCommand input output directory db = do
+  booksInDirectory <- getBookFilesFromDirectory directory
+  booksToAdd <- addUnsavedBookDialog input output directory $ getUnsavedBooks booksInDirectory db
   return $ booksToAdd <> db
 
-addUnsavedBookDialog :: Handle -> Handle -> [FilePath] -> IO [Book]
-addUnsavedBookDialog _ output [] = do
+addUnsavedBookDialog :: Handle -> Handle -> FilePath -> [FilePath] -> IO [Book]
+addUnsavedBookDialog _ output _ [] = do
   hPutStrLn output "No more unsaved files."
   return []
-addUnsavedBookDialog input output (file : rest) = do
+addUnsavedBookDialog input output directory (file : rest) = do
   hPutStrLn output $ "Do you want to create a database entry for " <> file <> "? [y/N/s/d/?]"
   wantToSave <- hGetLine input
   case wantToSave of
-    "y" -> monadCons (prepareNewEntry input output file) $ addUnsavedBookDialog input output rest
-    "n" -> addUnsavedBookDialog input output rest
+    "y" -> monadCons (prepareNewEntry input output directory file) $ addUnsavedBookDialog input output directory rest
+    "n" -> addUnsavedBookDialog input output directory rest
     "s" -> return []
     "d" -> do
       removeFile file
-      addUnsavedBookDialog input output rest
+      addUnsavedBookDialog input output directory rest
     "?" -> do
-      hPutStrLn output $
-        unlines
-          [ "y - yes",
-            "n - no",
-            "s - stop (say no to all consequent)",
-            "d - delete file",
-            "? - print this help"
-          ]
-      addUnsavedBookDialog input output rest
-    _ -> addUnsavedBookDialog input output rest
+      hPutStrLn output importHelpString
+      addUnsavedBookDialog input output directory (file : rest)
+    _ -> addUnsavedBookDialog input output directory rest
+
+importHelpString :: String
+importHelpString =
+  unlines
+    [ "y - yes",
+      "n - no",
+      "s - stop (say no to all consequent)",
+      "d - delete file",
+      "? - print this help"
+    ]
 
 getUnsavedBooks :: [FilePath] -> [Book] -> [FilePath]
 getUnsavedBooks files books = filter (not . hasEntry books) files
@@ -115,9 +120,9 @@ getUnsavedBooks files books = filter (not . hasEntry books) files
 hasEntry :: [Book] -> FilePath -> Bool
 hasEntry books file = any (\book -> file == fileName book) books
 
-runCleanCommand :: Handle -> Handle -> [Book] -> IO [Book]
-runCleanCommand input output db = do
-  booksInDirectory <- getBookFilesFromDirectory
+runCleanCommand :: Handle -> Handle -> FilePath -> [Book] -> IO [Book]
+runCleanCommand input output directory db = do
+  booksInDirectory <- getBookFilesFromDirectory directory
   entriesToRemove <- removeOrphanEntryDialog input output (getOrphanEntries booksInDirectory db) db
   return $ db \\ entriesToRemove
 
@@ -135,16 +140,19 @@ removeOrphanEntryDialog input output (book : rest) db = do
     "s" -> return []
     "a" -> return (book : rest)
     "?" -> do
-      hPutStrLn output $
-        unlines
-          [ "y - yes",
-            "n - no",
-            "s - stop (say no to all consequent)",
-            "a - auto (say yes to all consequent)",
-            "? - print this help"
-          ]
+      hPutStrLn output cleanHelpString
       removeOrphanEntryDialog input output (book : rest) db
     _ -> removeOrphanEntryDialog input output rest db
+
+cleanHelpString :: String
+cleanHelpString =
+  unlines
+    [ "y - yes",
+      "n - no",
+      "s - stop (say no to all consequent)",
+      "a - auto (say yes to all consequent)",
+      "? - print this help"
+    ]
 
 getOrphanEntries :: [FilePath] -> [Book] -> [Book]
 getOrphanEntries files = filter (not . hasFile files)
@@ -152,24 +160,24 @@ getOrphanEntries files = filter (not . hasFile files)
 hasFile :: [FilePath] -> Book -> Bool
 hasFile files book = any (\file -> fileName book == file) files
 
-runAddTags :: Handle -> Handle -> FilePath -> [Book] -> IO [Book]
-runAddTags input output file [] = do
+runAddTags :: Handle -> Handle -> FilePath -> FilePath -> [Book] -> IO [Book]
+runAddTags input output directory file [] = do
   hPutStrLn output "This file does not have a corresponding database entry. Do you wish to create one? [y/N]"
   wantToCreate <- hGetLine input
   if wantToCreate == "y"
-    then pure <$> prepareNewEntry input output file
+    then pure <$> prepareNewEntry input output directory file
     else return []
-runAddTags input output file (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) =
-  if file == thisFileName
+runAddTags input output directory file (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) =
+  if takeFileName file == thisFileName
     then do
       newTags <- getTags input output
       return $ Book thisFileName thisTitle thisAuthor (Set.union newTags theseTags) : bs
-    else (b :) <$> runAddTags input output file bs
+    else (b :) <$> runAddTags input output directory file bs
 
 runRemoveTags :: Handle -> Handle -> FilePath -> [Book] -> IO [Book]
 runRemoveTags _input _output _file [] = error "This file does not have a corresponding database entry, hence no tag can be removed."
 runRemoveTags input output file (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) =
-  if file == thisFileName
+  if takeFileName file == thisFileName
     then do
       tagsToRemove <- getTagsToRemove input output theseTags
       return $ Book thisFileName thisTitle thisAuthor (Set.difference theseTags tagsToRemove) : bs
@@ -184,7 +192,8 @@ getTagsToRemove input output allTags = do
   case isValidInteger (length allTags) numberOfTag of
     EmptyInput -> return Set.empty
     ValidInput n ->
-      let tagToRemove = Set.toAscList allTags !! (n - 1)
+      -- note that indexing in a Set starts at 0, while the numbering of tags in LiTS starts from 1.
+      let tagToRemove = Set.elemAt (n - 1) allTags
        in Set.insert tagToRemove <$> getTagsToRemove input output (Set.delete tagToRemove allTags)
     InvalidInput -> do
       hPutStrLn output $ "Invalid input. Please enter an integer between 1 and " <> show (length allTags) <> "!"
