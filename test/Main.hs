@@ -1,15 +1,53 @@
 module Main where
 
+import Control.Exception (catch, throwIO)
+import Control.Monad (forM_)
 import qualified Data.Set as Set
 import DataBase
 import EntryManager
 import Filter
+import GHC.IO.Exception (ExitCode)
+import System.Directory
+  ( createDirectory,
+    removeDirectoryRecursive,
+  )
 import Test.Tasty
 import Test.Tasty.HUnit
 import TestUtils
 
 main :: IO ()
-main = defaultMain $ testGroup "Great American Novel Test Suite" [testFilter, testAdd, testAddTag, testRemoveTag]
+main =
+  let extraBooks =
+        [ "gravitys-rainbow_thomas-pynchon.epub",
+          "infinite-jest_david-foster-wallace.epub",
+          "adventures-of-huckleberry-finn_mark-twain.epub",
+          "the-great-gatsby_f-scott-fitzgerald.epub",
+          "the-scarlett-letter_nathaniel-hawthorne.epub"
+        ]
+      unnecessaryFiles =
+        [ "absalom-absalom_william-faulkner.epub",
+          "little-women_louisa-may-alcott.epub"
+        ]
+   in do
+        prepareTestDirectory testDirectory testDB extraBooks unnecessaryFiles
+        defaultMain
+          ( testGroup
+              "Great American Novel Test Suite"
+              [testFilter, testAdd, testAddTag, testRemoveTag]
+          )
+          `catch` doCleanup
+
+doCleanup :: ExitCode -> IO ()
+doCleanup e = do
+  removeDirectoryRecursive testDirectory
+  throwIO e
+
+prepareTestDirectory :: FilePath -> [Book] -> [FilePath] -> [FilePath] -> IO ()
+prepareTestDirectory directory db extraFiles unnecessaryFiles =
+  let booksToCreate = fmap fileName db <> extraFiles \\ unnecessaryFiles
+   in do
+        createDirectory directory
+        forM_ booksToCreate (\b -> writeFile (directory <> "/" <> b) "")
 
 testDirectory :: FilePath
 testDirectory = "./test-data/"

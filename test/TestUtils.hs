@@ -7,9 +7,6 @@ import System.IO
 import System.Process (createPipe)
 import Test.Tasty.HUnit
 
-mockInputDirectory :: FilePath
-mockInputDirectory = "mock-input/"
-
 {- The test database consists of the following entries:
 Little Women - Louise May Alcott (american, english, novel, women)
 The Last of the Mohicans - James Fenimore Cooper (american, english, indian, novel)
