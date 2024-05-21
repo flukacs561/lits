@@ -3,7 +3,9 @@ module EntryManager
     removeEntry,
     addUnsavedBookDialog,
     runImportCommand,
+    importHelpString,
     runCleanCommand,
+    cleanHelpString,
     runAddTags,
     runRemoveTags,
   )
@@ -98,16 +100,19 @@ addUnsavedBookDialog input output directory (file : rest) = do
       removeFile file
       addUnsavedBookDialog input output directory rest
     "?" -> do
-      hPutStrLn output $
-        unlines
-          [ "y - yes",
-            "n - no",
-            "s - stop (say no to all consequent)",
-            "d - delete file",
-            "? - print this help"
-          ]
-      addUnsavedBookDialog input output directory rest
+      hPutStrLn output importHelpString
+      addUnsavedBookDialog input output directory (file : rest)
     _ -> addUnsavedBookDialog input output directory rest
+
+importHelpString :: String
+importHelpString =
+  unlines
+    [ "y - yes",
+      "n - no",
+      "s - stop (say no to all consequent)",
+      "d - delete file",
+      "? - print this help"
+    ]
 
 getUnsavedBooks :: [FilePath] -> [Book] -> [FilePath]
 getUnsavedBooks files books = filter (not . hasEntry books) files
@@ -135,16 +140,19 @@ removeOrphanEntryDialog input output (book : rest) db = do
     "s" -> return []
     "a" -> return (book : rest)
     "?" -> do
-      hPutStrLn output $
-        unlines
-          [ "y - yes",
-            "n - no",
-            "s - stop (say no to all consequent)",
-            "a - auto (say yes to all consequent)",
-            "? - print this help"
-          ]
+      hPutStrLn output cleanHelpString
       removeOrphanEntryDialog input output (book : rest) db
     _ -> removeOrphanEntryDialog input output rest db
+
+cleanHelpString :: String
+cleanHelpString =
+  unlines
+    [ "y - yes",
+      "n - no",
+      "s - stop (say no to all consequent)",
+      "a - auto (say yes to all consequent)",
+      "? - print this help"
+    ]
 
 getOrphanEntries :: [FilePath] -> [Book] -> [Book]
 getOrphanEntries files = filter (not . hasFile files)
