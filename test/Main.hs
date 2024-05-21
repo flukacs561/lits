@@ -352,4 +352,44 @@ testImport =
     ]
 
 testClean :: TestTree
-testClean = testGroup "test `clean' command" []
+testClean =
+  testGroup
+    "test `clean' command"
+    [ let testDescription = "Remove first, not second orphan entry"
+          mockInput = ["y", "n"]
+       in testCase testDescription $ do
+            mockInputHandle <- prepareMockHandle mockInput
+            discardHandle <- getNullHandle
+            newDB <- runCleanCommand mockInputHandle discardHandle testDirectory testDB
+            newDB @?= testDB `except` "absalom-absalom_william-faulkner.epub",
+      let testDescription = "Remove second, not first orphen entry"
+          mockInput = ["", "y"]
+       in testCase testDescription $ do
+            mockInputHandle <- prepareMockHandle mockInput
+            discardHandle <- getNullHandle
+            newDB <- runCleanCommand mockInputHandle discardHandle testDirectory testDB
+            newDB @?= testDB `except` "little-women_louisa-may-alcott.epub",
+      let testDescription = "Remove both by inputing `a'"
+          mockInput = ["a"]
+       in testCase testDescription $ do
+            mockInputHandle <- prepareMockHandle mockInput
+            discardHandle <- getNullHandle
+            newDB <- runCleanCommand mockInputHandle discardHandle testDirectory testDB
+            newDB @?= testDB `except` "absalom-absalom_william-faulkner.epub" `except` "little-women_louisa-may-alcott.epub",
+      let testDescription = "Do not remove either by inputing `s'"
+          mockInput = ["s"]
+       in testCase testDescription $ do
+            mockInputHandle <- prepareMockHandle mockInput
+            discardHandle <- getNullHandle
+            newDB <- runCleanCommand mockInputHandle discardHandle testDirectory testDB
+            newDB @?= testDB,
+      let testDescription = "Print help string, then abort by inputting `s'"
+          mockInput = ["?", "s"]
+       in testCase testDescription $ do
+            mockInputHandle <- prepareMockHandle mockInput
+            (mockOutputReadHandle, mockOutputWriteHandle) <- createPipe
+            newDB <- runCleanCommand mockInputHandle mockOutputWriteHandle testDirectory testDB
+            hClose mockOutputWriteHandle
+            outputs <- hGetContents mockOutputReadHandle
+            assertBool "help not displayed" $ cleanHelpString `isSubsequenceOf` outputs && newDB == testDB
+    ]
