@@ -112,6 +112,11 @@ testRunFilter =
             ]
           newDB = runFilter testFilterO testDB
        in testCase testDescription $ booksAllInList targetBooks newDB @? "author name matching failed",
+      let testDescription = "search inside string"
+          testFilterO = Just $ FilterO (Just "mohica") Nothing []
+          targetBook = "the-last-of-the-mohicans_j-f-cooper.epub"
+          newDB = runFilter testFilterO testDB
+       in testCase testDescription $ bookInList targetBook newDB @? "target book not found",
       let testDescription = "if empty FilterO, match all books"
           testFilterO = Nothing
        in testCase testDescription $ runFilter testFilterO testDB @?= testDB
