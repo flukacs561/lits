@@ -2,7 +2,7 @@ module LiTS.Utilities
   ( safeHead,
     safeTail,
     (|||),
-    monadCons,
+    monadCons
   )
 where
 

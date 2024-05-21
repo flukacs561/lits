@@ -1,12 +1,12 @@
 module LiTS.Formatting
   ( printBooks,
-    printMetaData,
+    printMetaData
   )
 where
 
 import Data.List (sortOn)
-import Data.Set
-import LiTS.DataBase
+import Data.Set ( toAscList )
+import LiTS.DataBase ( Book(Book, author), Author(Author), Tag )
 
 printBooks :: [Book] -> IO ()
 printBooks books = putStrLn $ unlines (printMetaData <$> sortOn author books)

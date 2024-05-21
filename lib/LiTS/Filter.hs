@@ -1,10 +1,20 @@
-module LiTS.Filter where
+module LiTS.Filter
+  ( FilterO (..),
+    runFilterCmd,
+    runFilter,
+    parseFilterInput,
+  )
+where
 
 import Data.Char (toLower)
 import Data.List (isInfixOf)
 import qualified Data.Set as Set
 import LiTS.DataBase
-import LiTS.Utilities
+  ( Author (firstName, lastName),
+    Book (author, tags, title),
+    Tag,
+  )
+import LiTS.Utilities (safeHead, safeTail)
 
 data FilterO = FilterO
   { titleF :: Maybe String,

@@ -4,13 +4,13 @@ module LiTS.FileManager
     dataBaseFileName,
     dataBaseFile,
     getBookFilesFromDirectory,
-    removeFile,
+    removeFile
   )
 where
 
 import qualified Data.ByteString as BS
-import System.Directory
-import System.FilePath
+import System.Directory ( getDirectoryContents, removeFile )
+import System.FilePath ( takeExtension, takeFileName )
 
 dataBaseFileName :: FilePath
 dataBaseFileName = "test-data.json"
