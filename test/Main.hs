@@ -93,11 +93,13 @@ testRunFilter =
     [ let testDescription = "only tags"
           testFilterO = Just $ FilterO Nothing Nothing ["american", "indian"]
           targetBook = "the-last-of-the-mohicans_j-f-cooper.epub"
-       in testCase testDescription $ bookInList targetBook (runFilter testFilterO testDB) @?= True,
+          newDB = runFilter testFilterO testDB
+       in testCase testDescription $ bookInList targetBook newDB @? "target book filtered out",
       let testDescription = "non-matcher book is excluded"
           testFilterO = Just $ FilterO Nothing Nothing ["american", "whale"]
           targetBook = "the-last-of-the-mohicans_j-f-cooper.epub"
-       in testCase testDescription $ bookInList targetBook (runFilter testFilterO testDB) @?= False,
+          newDB = runFilter testFilterO testDB
+       in testCase testDescription $ not (bookInList targetBook newDB) @? "target book not filtered out",
       let testDescription = "multiple hits"
           testFilterO = Just $ FilterO Nothing Nothing ["english"]
        in testCase testDescription $
@@ -108,7 +110,8 @@ testRunFilter =
             [ "moby-dick_herman-melville.epub",
               "uncle-toms-cabin_harriet-beecher-stowe.epub"
             ]
-       in testCase testDescription $ booksAllInList targetBooks (runFilter testFilterO testDB) @?= True,
+          newDB = runFilter testFilterO testDB
+       in testCase testDescription $ booksAllInList targetBooks newDB @? "author name matching failed",
       let testDescription = "if empty FilterO, match all books"
           testFilterO = Nothing
        in testCase testDescription $ runFilter testFilterO testDB @?= testDB
@@ -257,7 +260,7 @@ testAddTag =
             mockInputHandle <- prepareMockHandle mockInput
             discardHandle <- getNullHandle
             newDB <- runAddTags mockInputHandle discardHandle testDirectory file testDB
-            assertBool "failed to add entry" $ newEntry `elem` newDB
+            newEntry `elem` newDB @? "failed to add entry"
     ]
   where
     buildInputFromTagsToAdd :: [Tag] -> [String]
@@ -275,7 +278,7 @@ testAddTag =
                 [ "failed to add new tags: " <> show tagsToAdd,
                   "current tags: " <> (show . Set.toAscList . safeGetTags newDB) file
                 ]
-         in assertBool errorMsg (bookHasTags newDB file $ Set.fromList tagsToAdd)
+         in (bookHasTags newDB file $ Set.fromList tagsToAdd) @? errorMsg
 
 testRemoveTag :: TestTree
 testRemoveTag =
@@ -314,7 +317,7 @@ testRemoveTag =
                 "old tags:" <> show (Set.toAscList oldTags),
                 "new tags:" <> show (Set.toAscList newTags)
               ]
-       in assertBool errorMsg $ Set.difference oldTags (Set.fromList tagsToRemove) == newTags
+       in Set.difference oldTags (Set.fromList tagsToRemove) == newTags @? errorMsg
 
 testImport :: TestTree
 testImport =
