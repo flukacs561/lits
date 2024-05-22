@@ -19,7 +19,7 @@ import System.Environment (getArgs)
 
 main :: IO ()
 main =
-  let workingDirectory = "test-data"
+  let workingDirectory = "."
    in do
         args <- getArgs
         dataBase <- validateDBFile workingDirectory
