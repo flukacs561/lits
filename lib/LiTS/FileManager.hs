@@ -13,7 +13,7 @@ import System.Directory ( getDirectoryContents, removeFile )
 import System.FilePath ( takeExtension, takeFileName )
 
 dataBaseFileName :: FilePath
-dataBaseFileName = "test-data.json"
+dataBaseFileName = ".lits.json"
 
 dataBaseFile :: FilePath -> IO BS.ByteString
 dataBaseFile workingDirectory = BS.readFile $ workingDirectory <> "/" <> dataBaseFileName
