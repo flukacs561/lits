@@ -22,3 +22,22 @@ The syntax for specifying a filter is the following: it consists of three possib
 The fields are matched using a `textMatcher` function. This currently just checks whether the **input string is the prefix of the field** for any of the entried, but in the future I want to make it fuzzy.
 
 > Example: `lits filter -a Melv -T moby -t novel whale`
+
+# Usage with `cabal`
+```shell
+cabal build all
+
+cabal run lits -- <args>
+cabal run lits-test
+```
+
+# Usage with `nix`
+```shell
+# build
+nix build
+
+# run
+./result/bin/lits <args>
+# or
+nix run . -- <args>
+```
