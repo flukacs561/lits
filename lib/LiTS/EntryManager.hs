@@ -180,7 +180,6 @@ runRemoveTags _input _output _file [] = error "This file does not have a corresp
 runRemoveTags input output file (b@(Book thisFileName thisTitle thisAuthor theseTags) : bs) =
   if takeFileName file == thisFileName
     then do
-<<<<<<< HEAD
       tagsToRemove <- getTagsToRemove input output theseTags
       return $ Book thisFileName thisTitle thisAuthor (Set.difference theseTags tagsToRemove) : bs
     else (b :) <$> runRemoveTags input output file bs
